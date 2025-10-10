@@ -112,9 +112,9 @@ SELECT * FROM tenants;
 
 
 -- -----------------------------------------------------
--- Table `jj_apartments`.`sub_tenants`
+-- Table `sub_tenants`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `jj_apartments`.`sub_tenants` (
+CREATE TABLE IF NOT EXISTS `sub_tenants` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `last_name` VARCHAR(45) NOT NULL,
   `first_name` VARCHAR(45) NOT NULL,
@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS `jj_apartments`.`sub_tenants` (
   UNIQUE INDEX `messenger_link_UNIQUE` (`messenger_link` ASC) VISIBLE,
   CONSTRAINT `main_tenant_id`
     FOREIGN KEY (`main_tenant_id`)
-    REFERENCES `jj_apartments`.`tenants` (`id`)
+    REFERENCES `tenants` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
