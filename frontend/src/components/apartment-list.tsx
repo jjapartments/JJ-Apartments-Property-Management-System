@@ -1,19 +1,45 @@
-import { Edit, Trash2 } from "lucide-react";
+import { Trash2, History, Eye } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import EditUnitCard from "./edit-unit-card";
 import { DeleteModal } from "./delete-modal";
 import AddUnitButton from "./add-unit-button";
 import { useDataRefresh } from '@/contexts/DataContext';
 import { ErrorModal } from "./error-modal";
+import { AllInModal } from "@/components/all-in-modal";
+
 export type Unit = {
-  id: number,
-  unitNumber: string,
-  name: string,
-  description: string,
-  numOccupants: number,
-  contactNumber?: string,
-  price: number
+  id: number;
+  unitNumber: string;
+  name: string;
+  description: string;
+  numOccupants: number;
+  price: number;
+};
+
+type SubTenant = {
+  firstName: string,
+  middleName?: string;
+  lastName: string;
+  link: string;
+  phoneNumber: string;
 }
+
+type Tenant = {
+  id?: number | null;
+  firstName?: string | null;
+  middleName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+  unit: string;
+  phoneNumber?: string | null;
+  dateAdded?: string | null;
+
+  subTenants: SubTenant[];
+};
+
+export type TenantWithUnitDetails = Omit<Tenant, 'unit'> & {
+  unit: Unit;
+};
 
 
 export function ApartmentList() {
@@ -27,11 +53,17 @@ export function ApartmentList() {
   const [loading, setLoading] = useState(false);
   const areaRef = useRef<HTMLDivElement>(null);
 
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [fullTenantData, setFullTenantData] = useState<TenantWithUnitDetails[] | null>(null);
+  const [forViewTenantData, setForViewTenantData] = useState<TenantWithUnitDetails[] | null>(null);
+  const [selectedTenant, setSelectedTenant] = useState<TenantWithUnitDetails | null>(null);
+
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(event.target.value);
     };
     const cancelSearch = () => {
         setSearchTerm('');
+        setForViewTenantData(fullTenantData)
         window.location.reload();
     }
     const handleEdit = (u: Unit) => {
@@ -41,6 +73,13 @@ export function ApartmentList() {
     const handleDelete = (u: Unit) => {
       setSelectedUnit(u)
       setShowConfirm(true)
+    }
+    const handleViewApartment = (data: TenantWithUnitDetails) => {
+      setSelectedTenant(data);
+      setIsViewModalOpen(true);
+    };
+    const handleViewHistory = () => {
+      console.log("History here...")
     }
       
     const confirmDelete = async (id: number) => {
@@ -89,18 +128,43 @@ export function ApartmentList() {
     
       }
 
-    const handleSearch = async (searchTerm: string) => {
+    /*const handleSearch = async (searchTerm: string) => {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units/search?q=${encodeURIComponent(searchTerm)}`);
             if (!response.ok) {
               const err = await response.json();
               throw new Error(err?.error || "Something went wrong");
             }
-            const data = await response.json(); 
-            setUnits(data);
+            const searchedUnits: Unit[] = await response.json(); 
+            setUnits(searchedUnits);
         } catch (err: any) {
             setError(err.message || "Something went wrong")
         }
+    };*/
+
+    const handleSearch = async (searchTerm: string) => {
+      console.log(searchTerm)
+      if (searchTerm === '') {
+        setForViewTenantData(fullTenantData)
+        setUnits(fullTenantData?.map(t => t.unit) || []);
+        return;
+      }
+
+      try {
+        const filtered = fullTenantData?.filter((data) => {
+          const lower = searchTerm.toLowerCase();
+          return (
+            data.unit.name.toLowerCase().includes(lower) ||
+            data.unit.unitNumber.toLowerCase().includes(lower) ||
+            data.firstName?.toLowerCase().includes(lower) ||
+            data.lastName?.toLowerCase().includes(lower)
+          );
+        }) || [];
+        setForViewTenantData(filtered)
+        setUnits(filtered.map(f => f.unit));
+      } catch (err: any) {
+        setError(err.message || "Something went wrong while filtering");
+      }
     };
 
     const formatPrice = (price: number) => {
@@ -114,8 +178,102 @@ export function ApartmentList() {
                 const err = await res.json();
                 throw new Error(err?.error || "Error fetching units");
               }
-              const data = await res.json();
-              setUnits(data);
+              const unitData = await res.json();
+              setUnits(unitData);
+
+              const tenantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants`);
+              if (!tenantRes.ok) {
+                throw new Error("Error fetching apartment data");
+              }
+              const tenantData = await tenantRes.json();
+
+
+              /*const subtenantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants`);
+              if (!subtenantRes.ok) {
+                throw new Error("Error fetching apartment data");
+              }
+              const subtenantData = await subtenantRes.json();*/
+
+
+              const subtenantData = [
+                {
+                    id: 1,
+                    firstName: "Ana",
+                    middleInitial: "M",
+                    lastName: "Cruz",
+                    phoneNumber: "09170001111",
+                    messengerLink: "https://m.me/ana.cruz",
+                    main_tenant_id: 1
+                },
+                {
+                    id: 2,
+                    firstName: "Pedro",
+                    middleInitial: "L",
+                    lastName: "Reyes",
+                    phoneNumber: "09170002222",
+                    messengerLink: "https://m.me/pedro.reyes",
+                    main_tenant_id: 2
+                },
+                {
+                    id: 3,
+                    firstName: "Liza",
+                    middleInitial: null,
+                    lastName: "Reyes",
+                    phoneNumber: "09170003333",
+                    messengerLink: "https://m.me/liza.reyes",
+                    main_tenant_id: 2
+                },
+                {
+                    id: 4,
+                    firstName: "Tyler",
+                    middleInitial: "M",
+                    lastName: "Cruz",
+                    phoneNumber: "09170001111",
+                    messengerLink: "https://m.me/tyler.cruz",
+                    main_tenant_id: 1
+                },
+            ];
+
+            console.log("All units: ", unitData)
+            console.log("All tenant: ", tenantData)
+
+            const processed: TenantWithUnitDetails[] = unitData.map((u: Unit) => {
+              const tenant = tenantData.find((t: any) => Number(t.unitId) === u.id);
+
+              const tenantSubs = subtenantData.filter(
+                (s: any) => s.main_tenant_id === tenant?.id
+              );
+
+              if (tenant) {
+                return {
+                  id: tenant.id,
+                  firstName: tenant.firstName,
+                  middleName: tenant.middleInitial || tenant.middleName,
+                  lastName: tenant.lastName,
+                  email: tenant.email,
+                  phoneNumber: tenant.phoneNumber,
+                  dateAdded: tenant.dateAdded,
+                  subTenants: tenantSubs,
+                  unit: u,
+                };
+              } else {
+                  return {
+                    id: null,
+                    firstName: null,
+                    middleName: null,
+                    lastName: null,
+                    email: null,
+                    phoneNumber: null,
+                    dateAdded: null,
+                    subTenants: [],
+                    unit: u,
+                  } as TenantWithUnitDetails;
+                }
+            });
+
+              console.log("Full tenant data:", processed);
+              setFullTenantData(processed);
+              setForViewTenantData(processed)
             } catch (error: any) {
               setError(error.message || "Error fetching units")
             }
@@ -149,19 +307,19 @@ export function ApartmentList() {
     }, [refreshTrigger]);
 
     useEffect(() =>{
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                if (searchTerm !== '') {
-                    cancelSearch();
-                }
-            }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-        document.removeEventListener('keydown', handleKeyDown);
-    };
+          const handleKeyDown = (event: KeyboardEvent) => {
+              if (event.key === 'Escape') {
+                  if (searchTerm !== '') {
+                      cancelSearch();
+                  }
+              }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+          document.removeEventListener('keydown', handleKeyDown);
+      };
 
-  }, [searchTerm])
+    }, [searchTerm])
 
   const createTable = (data: Unit[]) => {
     return (
@@ -212,38 +370,44 @@ export function ApartmentList() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {data.map((apartment) => (
-                <tr key={apartment.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{apartment.id}</td>
+              {forViewTenantData?.map((data) => (
+                <tr key={data.unit.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{data.unit.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900">{apartment.unitNumber}</span>
+                      <span className="text-sm font-medium text-gray-900">{data.unit.unitNumber}</span>
                       <span className={`px-2 py-1 text-xs rounded-full ${
-                        apartment.contactNumber 
+                        data.phoneNumber 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-gray-100 text-gray-500'
                       }`}>
                         {/* TODO: This will be joined from tenants table in the future */}
-                        {apartment.contactNumber || "No tenant"}
+                        {data.phoneNumber || "No tenant"}
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{apartment.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{apartment.description}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{apartment.numOccupants}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{formatPrice(apartment.price)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{data.unit.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{data.unit.description}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{(data.subTenants.length + (data.firstName ? 1 : 0))} / {data.unit.numOccupants}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{formatPrice(data.unit.price)}</td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex gap-2">
                       <button 
-                      onClick={() => handleEdit(apartment)}
+                      onClick={() => handleViewApartment(data)}
                       className="inline-flex items-center px-3 py-1 bg-yellow-300 text-black text-xs rounded hover:bg-yellow-400 transition-colors border border-yellow-300 hover:border-yellow-400">
-                        <Edit size={12} className="mr-1" />
-                        Edit
+                        <Eye size={12} className="mr-1" />
+                        View
                       </button>
                       <button 
-                      onClick={() => handleDelete(apartment)}
-                      className="inline-flex items-center px-3 py-1 bg-black text-yellow-300 text-xs rounded hover:text-yellow-400 transition-colors border border-black hover:border-black">
+                      onClick={() => handleViewHistory}
+                      className="inline-flex items-center px-3 py-1 bg-gray-300 text-black text-xs rounded hover:bg-yellow-400 transition-colors border border-gray-300 hover:border-yellow-400">
+                        <History size={12} className="mr-1" />
+                        History
+                      </button>
+                      <button 
+                      onClick={() => handleDelete(data.unit)}
+                      className="inline-flex items-center px-3 ml-10 py-1 bg-black text-yellow-300 text-xs rounded hover:text-yellow-400 transition-colors border border-black hover:border-black">
                         <Trash2 size={12} className="mr-1" />
                         Delete
                       </button>
@@ -296,8 +460,15 @@ export function ApartmentList() {
         message={error || ""}
         onClose={() => setError(null)}
       />
-        
-      
+
+      {selectedTenant && (
+          <AllInModal 
+              open={isViewModalOpen}
+              selectedTab={"apartment"}
+              onClose={() => {setIsViewModalOpen(false), setSelectedTenant(null)}}
+              tenant={selectedTenant}
+          />
+      )}
     </div>
   );
 };
