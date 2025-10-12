@@ -1,18 +1,15 @@
 package com.jjapartments.backend.models;
 
-public class Tenant {
+public class SubTenant {
 
     private int id;
     private String lastName;
     private String firstName;
     private String middleInitial;
-    private String email;
     private String phoneNumber;
-    private int unitId;
-    private String moveInDate;
-    private String moveOutDate;
+    private String messengerLink;
+    private int mainTenantId;
 
-       
     public int getId() {
         return id;
     }
@@ -45,14 +42,6 @@ public class Tenant {
         this.middleInitial = middleInitial;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
     public String getPhoneNumber() {
         return phoneNumber;
     }
@@ -61,27 +50,19 @@ public class Tenant {
         this.phoneNumber = phoneNumber;
     }
 
-    public int getUnitId() {
-        return unitId;
+    public String getMessengerLink() {
+        return messengerLink;
     }
 
-    public void setUnitId(int unitId) {
-        this.unitId = unitId;
+    public void setMessengerLink(String messengerLink) {
+        this.messengerLink = messengerLink;
     }
 
-    public String getMoveInDate() {
-        return moveInDate;
+    public int getMainTenantId() {
+        return mainTenantId;
     }
 
-    public void setMoveInDate(String moveInDate) {
-        this.moveInDate = moveInDate;
-    }
-
-    public String getMoveOutDate() {
-        return moveOutDate;
-    }
-
-    public void setMoveOutDate(String moveOutDate) {
-        this.moveOutDate = moveOutDate;
+    public void setMainTenantId(int mainTenantId) {
+        this.mainTenantId = mainTenantId;
     }
 }

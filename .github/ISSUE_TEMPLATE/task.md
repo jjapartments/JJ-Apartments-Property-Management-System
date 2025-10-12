@@ -5,9 +5,6 @@ title: "TASK | "
 
 ---
 
-### Description
-Describe what needs to be done.
-
 ### Acceptance Criteria
 - [ ] Item 1
 - [ ] Item 2

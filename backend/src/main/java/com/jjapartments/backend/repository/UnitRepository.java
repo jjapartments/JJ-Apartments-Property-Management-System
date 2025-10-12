@@ -6,8 +6,8 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.jjapartments.backend.models.Unit;
 import com.jjapartments.backend.mappers.UnitRowMapper;
@@ -29,9 +29,17 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        t.phone_number AS contact_number,
-                        (CASE WHEN u.active_tenant_id IS NULL THEN 0 ELSE 1 END) AS curr_occupants
-                        -- TODO: Adjust curr_occupants logic when sub-tenants feature is implemented
+                        (CASE
+                            WHEN u.active_tenant_id IS NULL THEN 0
+                            ELSE (
+                                1 + (
+                                    SELECT COUNT(*)
+                                    FROM sub_tenants st
+                                    WHERE st.main_tenant_id = u.active_tenant_id
+                                )
+                            )
+                        END) AS curr_occupants
+                        u.active_tenant_id
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
                 """;
@@ -58,7 +66,7 @@ public class UnitRepository {
         if (unitExists(unit)) {
             throw new ErrorException("The unit already exists.");
         } else {
-            String sql = "INSERT INTO units(unit_number, name, description, price, num_occupants) VALUES (?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO units(unit_number, name, description, price, num_occupants,active_tenant_id) VALUES (?, ?, ?, ?, ?, ?)";
             jdbcTemplate.update(sql, unit.getUnitNumber(), unit.getName(), unit.getDescription(), unit.getPrice(),
                     unit.getNumOccupants());
 
@@ -70,8 +78,17 @@ public class UnitRepository {
                             u.description,
                             u.price,
                             u.num_occupants,
-                            t.phone_number AS contact_number,
-                            (CASE WHEN u.active_tenant_id IS NULL THEN 0 ELSE 1 END) AS curr_occupants
+                            (CASE
+                                WHEN u.active_tenant_id IS NULL THEN 0
+                                ELSE (
+                                    1 + (
+                                        SELECT COUNT(*)
+                                        FROM sub_tenants st
+                                        WHERE st.main_tenant_id = u.active_tenant_id
+                                    )
+                                )
+                            END) AS curr_occupants
+                            u.active_tenant_id
                         FROM units u
                         LEFT JOIN tenants t ON u.active_tenant_id = t.id
                         WHERE u.unit_number = ?
@@ -89,7 +106,8 @@ public class UnitRepository {
                     unit.getName(),
                     unit.getDescription(),
                     unit.getPrice(),
-                    unit.getNumOccupants());
+                    unit.getNumOccupants(),
+                    unit.getActiveTenantId() > 0 ? unit.getActiveTenantId() : null);
         }
     }
 
@@ -107,9 +125,17 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        t.phone_number AS contact_number,
-                        (CASE WHEN u.active_tenant_id IS NULL THEN 0 ELSE 1 END) AS curr_occupants
-                        -- TODO: Adjust curr_occupants logic when sub-tenants feature is implemented
+                    (CASE
+                        WHEN u.active_tenant_id IS NULL THEN 0
+                        ELSE (
+                            1 + (
+                                SELECT COUNT(*)
+                                FROM sub_tenants st
+                                WHERE st.main_tenant_id = u.active_tenant_id
+                            )
+                        )
+                    END) AS curr_occupants
+                         u.active_tenant_id
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
                     WHERE u.id = ?
@@ -128,7 +154,7 @@ public class UnitRepository {
         if (unitExists(unit, existingUnit.getId())) {
             throw new ErrorException("The unit already exists.");
         }
-        String sql = "UPDATE units SET unit_number = ?, name = ?, description = ?, price = ?, num_occupants = ? WHERE id = ?";
+        String sql = "UPDATE units SET unit_number = ?, name = ?, description = ?, price = ?, num_occupants = ?, active_tenant_id = ? WHERE id = ?";
         return jdbcTemplate.update(sql, unit.getUnitNumber(), unit.getName(), unit.getDescription(), unit.getPrice(),
                 unit.getNumOccupants(), id);
     }
@@ -142,9 +168,17 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        t.phone_number AS contact_number,
-                        (CASE WHEN u.active_tenant_id IS NULL THEN 0 ELSE 1 END) AS curr_occupants
-                        --TODO: Adjust curr_occupants logic when sub-tenants feature is implemented
+                        (CASE
+                            WHEN u.active_tenant_id IS NULL THEN 0
+                            ELSE (
+                                1 + (
+                                    SELECT COUNT(*)
+                                    FROM sub_tenants st
+                                    WHERE st.main_tenant_id = u.active_tenant_id
+                                )
+                            )
+                        END) AS curr_occupants
+                        u.active_tenant_id
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
                     WHERE LOWER(u.name) LIKE ?
@@ -165,9 +199,17 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        t.phone_number AS contact_number,
-                        (CASE WHEN u.active_tenant_id IS NULL THEN 0 ELSE 1 END) AS curr_occupants
-                        --TODO: Adjust curr_occupants logic when sub-tenants feature is implemented
+                        (CASE
+                            WHEN u.active_tenant_id IS NULL THEN 0
+                            ELSE (
+                                1 + (
+                                    SELECT COUNT(*)
+                                    FROM sub_tenants st
+                                    WHERE st.main_tenant_id = u.active_tenant_id
+                                )
+                            )
+                        END) AS curr_occupants
+                        u.active_tenant_id
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
                     WHERE u.name = ? AND u.unit_number = ?
