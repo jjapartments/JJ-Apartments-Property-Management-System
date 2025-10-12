@@ -135,9 +135,17 @@ export default function TenantsManagementPage() {
         }
     };
 
+    const handleAddTenantClick = () => {
+        setEditingTenant(null);  
+        setModalOpen(true);
+    };
+
     const toggleViewModal = () => {
         setIsViewModalOpen(!isViewModalOpen);
-    }
+        if (isViewModalOpen) {
+            setEditingTenant(null);  
+        }
+    };
 
     const getUnit_id = async (unitName, unitNumber) => {
         try {
@@ -424,7 +432,7 @@ export default function TenantsManagementPage() {
                         />
                                                 
                         <button
-                            onClick={() => setModalOpen(true)}
+                            onClick={handleAddTenantClick}
                             className="px-4 py-2 text-yellow-300 bg-black hover:text-yellow-400 rounded-lg transition-all duration-200 text-sm font-medium border border-black hover:border-black"
                         >
                             Add Tenant
@@ -441,7 +449,7 @@ export default function TenantsManagementPage() {
                             <h3 className="text-xl font-semibold text-gray-900 mb-2">No tenants yet</h3>
                             <p className="text-gray-500 mb-6 max-w-md mx-auto">Get started by adding your first tenant to begin managing your property</p>
                             <button
-                                onClick={() => setModalOpen(true)}
+                                onClick={handleAddTenantClick}
                                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                             >
                                 Add Your First Tenant
@@ -549,7 +557,7 @@ export default function TenantsManagementPage() {
                 <AllInModal 
                     open={isViewModalOpen}
                     selectedTab={"tenant"}
-                    onClose={() => {setIsViewModalOpen(false), setSelectedTenant(null)}}
+                    onClose={() => {setIsViewModalOpen(false), setSelectedTenant(null), setEditingTenant(null)}}
                     tenant={selectedTenant}
                     onUpdateTenant={handleUpdates}
                 />
