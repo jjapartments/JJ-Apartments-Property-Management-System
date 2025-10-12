@@ -24,22 +24,30 @@ export function AllInModal({ open, selectedTab, onClose, tenant, onUpdateTenant 
 	const [isEditing, setIsEditing] = useState(false);
 
 	const renderTabContent = () => {
-		console.log(tenant)
 		switch (activeTab) {
 			case "tenant":
-				return <TenantDetails tenant={tenant} isCurrEditing={setIsEditing} onSubmit={onUpdateTenant}/>;
+				return 	<TenantDetails 
+							tenant={tenant} 
+							isCurrEditing={setIsEditing} 
+							onSubmit={onUpdateTenant}
+						/>;
 			case "apartment":
-				return <ApartmentDetails unit={tenant.unit} isCurrEditing={setIsEditing} />;
+				return 	<ApartmentDetails 
+							unit={tenant.unit} 
+							isCurrEditing={setIsEditing} 
+							onSubmit={onUpdateTenant} 
+						/>;
 			case "subtenants":
 				return (
-				<SubTenantDetails
-					subtenants={tenant.subTenants || []}
-					maxOccupants={tenant.unit?.numOccupants}
-					isCurrEditing={setIsEditing}
-					noTenant={tenant.firstName == null}
-					mainTenantId={tenant.id}
-				/>
-			);
+					<SubTenantDetails
+						subtenants={tenant.subTenants || []}
+						maxOccupants={tenant.unit?.numOccupants}
+						isCurrEditing={setIsEditing}
+						noTenant={tenant.firstName == null}
+						mainTenantId={tenant.id}
+						onSubmit={onUpdateTenant}
+					/>
+				);
 			default:
 				return null;
 		}

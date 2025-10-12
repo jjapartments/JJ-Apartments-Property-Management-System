@@ -111,7 +111,7 @@ export default function TenantsManagementPage() {
                 return {
                     ...t,
                     
-                    middleName: t.middleInitial, // Map middleInitial to middleName for frontend consistency
+                    middleName: t.middleInitial, 
                     unit: unitInfo ? unitInfo : {
                         id: t.unit,
                         name: 'Unknown Building',
@@ -138,7 +138,6 @@ export default function TenantsManagementPage() {
     const toggleViewModal = () => {
         setIsViewModalOpen(!isViewModalOpen);
     }
-
 
     const getUnit_id = async (unitName, unitNumber) => {
         try {
@@ -256,23 +255,26 @@ export default function TenantsManagementPage() {
         setIsViewModalOpen(true);
     };
 
+    const handleUpdates = async (updatedData: any) => {
+        console.log("triggered")
+        if (updatedData)
+            handleUpdateTenant(updatedData)
+
+        triggerRefresh(); 
+        console.log("triggerRefresh() called successfully");
+        fetchTenants(); 
+        setIsViewModalOpen(false);
+        setTimeout(() => {
+            setIsViewModalOpen(true);
+        }, 150);
+    }
+
     const handleUpdateTenant = async (updatedData: any) => {
         if (!editingTenant) {
             console.error('No tenant selected for update.');
             return;
         }
-        // let unitIdForUpdate = editingTenant.unit.id; 
-        // if (updatedData.unitName !== editingTenant.unit.name || updatedData.unitNum !== editingTenant.unit.unitNumber) {
-        //     console.log("Unit details in form changed. Attempting to find new unit ID...");
-        //     const newUnitId = await getUnit_id(updatedData.unitName, updatedData.unitNum);
-        //     if (newUnitId === null || newUnitId === undefined) {
-        //         console.error('Error: Could not retrieve new unit ID for the updated unit details. Please ensure the Unit Name and Unit No. are valid.');
-        //         alert('Failed to update tenant: New unit not found or invalid unit details. Please check the Unit Name and Unit No.');
-        //         return;
-        //     }
-        //     unitIdForUpdate = newUnitId;
-        // }
-        
+
         const tenantUpdatePayload = {
             firstName: updatedData.firstName,
             middleInitial: updatedData.middleName || null,
@@ -311,21 +313,19 @@ export default function TenantsManagementPage() {
                 return;
             }
             
-            console.log('Tenant updated successfully, triggering refresh...');
-            //toggleModal(); 
-            console.log("About to call triggerRefresh()");
-            triggerRefresh(); // Trigger refresh in other components
+            /*console.log("About to call triggerRefresh()");
+            triggerRefresh();
             console.log("triggerRefresh() called successfully");
-            fetchTenants(); 
+            fetchTenants();*/ 
 
             if (selectedTenant) {
                 setSelectedTenant({ ...selectedTenant, ...tenantUpdatePayload });
             }
 
-            setIsViewModalOpen(false);
+            /*setIsViewModalOpen(false);
             setTimeout(() => {
                 setIsViewModalOpen(true);
-            }, 150);
+            }, 150);*/
         } catch (error) {
             console.error('Error updating tenant:', error);
             setErrorMessage('An unexpected error occurred while updating the tenant. Please try again.');
@@ -551,7 +551,7 @@ export default function TenantsManagementPage() {
                     selectedTab={"tenant"}
                     onClose={() => {setIsViewModalOpen(false), setSelectedTenant(null)}}
                     tenant={selectedTenant}
-                    onUpdateTenant={handleUpdateTenant}
+                    onUpdateTenant={handleUpdates}
                 />
             )}
 

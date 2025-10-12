@@ -9,9 +9,10 @@ import { useDataRefresh } from '@/contexts/DataContext';
 interface ApartmentDetails {
      unit: any;
      isCurrEditing?: (hasChanges: boolean) => void;
+     onSubmit?: (updatedData: any) => Promise<void> | void;
 }
 
-export function ApartmentDetails({ unit, isCurrEditing }: ApartmentDetails) {
+export function ApartmentDetails({ unit, isCurrEditing, onSubmit }: ApartmentDetails) {
      const [isEditing, setIsEditing] = useState(false);
      const handleEdit = () => {
           isCurrEditing?.(true)
@@ -25,11 +26,10 @@ export function ApartmentDetails({ unit, isCurrEditing }: ApartmentDetails) {
           numOccupants: unit.numOccupants || "",
           price: unit.price || "",
      });
+     
      const [currentUnit, setCurrentUnit] = useState(unit);
-
      useEffect(() => {
           setCurrentUnit(unit);
-          console.log("UNIT HERE", unit)
 
           setFormData({
                name: unit.name || "",
@@ -40,16 +40,17 @@ export function ApartmentDetails({ unit, isCurrEditing }: ApartmentDetails) {
           });
      }, [unit]);
 
-     const hasUnsavedChanges = JSON.stringify(formData) !== JSON.stringify({
+     const unsavedChangesFlag = JSON.stringify(formData) !== JSON.stringify({
           name: unit.name || "",
           unitNumber: unit.unitNumber || "",
           description: unit.description || "",
           numOccupants: unit.numOccupants || "",
           price: unit.price || "",
      });
+     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
      useEffect(() => {
-          isCurrEditing?.(hasUnsavedChanges);
-     }, [hasUnsavedChanges]);
+          setHasUnsavedChanges(unsavedChangesFlag);
+     }, [unsavedChangesFlag]);
 
      const handleCancel = () => {
           setIsEditing(false);
@@ -67,7 +68,8 @@ export function ApartmentDetails({ unit, isCurrEditing }: ApartmentDetails) {
 
      const { triggerRefresh } = useDataRefresh();
      const handleSubmit = async () => {
-          if (!validateForm()) return;
+          if (!validateForm()) 
+               return;
 
           const body = {
                name: formData.name,
@@ -76,10 +78,6 @@ export function ApartmentDetails({ unit, isCurrEditing }: ApartmentDetails) {
                numOccupants: Number(formData.numOccupants),
                price: Number(formData.price),
           };
-
-          console.log("Submitted values:", formData);
-          setIsEditing(false);
-          setErrors({});
 
           try {
                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units/update/${unit.id}`, {
@@ -96,11 +94,16 @@ export function ApartmentDetails({ unit, isCurrEditing }: ApartmentDetails) {
                console.log("Unit updated successfully");
                setIsEditing(false);
                setErrors({});
+               isCurrEditing?.(false)
 
                setCurrentUnit(body); 
                setFormData(body)
 
                triggerRefresh();
+
+               if (onSubmit) {
+                    onSubmit(null)
+               }
           } catch (error: any) {
                console.error("Error updating unit:", error);
                setErrors({ general: error.message || "Failed to update unit record." });
@@ -128,7 +131,6 @@ export function ApartmentDetails({ unit, isCurrEditing }: ApartmentDetails) {
           }
 
           // Check if inputs are valid
-
           const newErrors: { [key: string]: string } = {};
 
           if (!formData.name.trim()) 

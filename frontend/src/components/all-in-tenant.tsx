@@ -158,6 +158,8 @@ export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetails
           isCurrEditing?.(hasUnsavedChanges);
      }, [hasUnsavedChanges]);
 
+     const [tenantData, setTenantData] = useState(tenant);
+
      if (!tenant || (!tenant.firstName && !isEditing)) {
           return (
                <div className="flex flex-col items-center justify-center h-full space-y-4">

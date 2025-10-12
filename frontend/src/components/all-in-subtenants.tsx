@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { InputField } from "@/components/ui/input";
 import { DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -21,6 +19,7 @@ interface SubTenantDetailsProps {
      isCurrEditing?: (hasChanges: boolean) => void;
      noTenant: Boolean;
      mainTenantId: number
+     onSubmit?: (updatedData: any) => Promise<void> | void;
 }
 interface SubtenantWIndex {
      subtenant: any;
@@ -28,12 +27,13 @@ interface SubtenantWIndex {
      isEditing: boolean;
 }
 
-export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTenant, mainTenantId }: SubTenantDetailsProps) {
+export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTenant, mainTenantId, onSubmit }: SubTenantDetailsProps) {
      const [isEditing, setIsEditing] = useState(false);
      const [formData, setFormData] = useState<Subtenant[]>([]);
      const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
      const [validationError, setValidationError] = useState<string | null>(null);
      const [originalData, setOriginalData] = useState<Subtenant[]>([]);
+     const { triggerRefresh } = useDataRefresh();
 
      useEffect(() => {
           setFormData(subtenants);
@@ -49,7 +49,6 @@ export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTe
                setHasUnsavedChanges(false);
           }
      }, [formData, isEditing, subtenants, isCurrEditing]);
-
 
      const handleEdit = () => {
           isCurrEditing?.(true)
@@ -83,7 +82,6 @@ export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTe
           return [...new Set(errors)];
      };
 
-     const { triggerRefresh } = useDataRefresh();
      const handleSubmit = async () => {
           const errors = validateForm();
           if (errors.length > 0) {
@@ -92,21 +90,20 @@ export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTe
           }
           setValidationError(null);
 
-          const originalIds = new Set(subtenants.map(st => st.id));
           const currentIds = new Set(formData.filter(st => st.id).map(st => st.id));
 
           const added = formData.filter(st => st.id == "");
-
           const FIELDS_TO_COMPARE = ["firstName", "middleInitial", "lastName", "phoneNumber", "link"];
           const updated = formData.filter(st => {
-               if (!st.id) return false;
+               if (!st.id) 
+                    return false;
+
                const original = subtenants.find(o => o.id === st.id);
-               if (!original) return false;
-               
-               // Compare only editable fields
+               if (!original)
+                     return false;
+
                return FIELDS_TO_COMPARE.some(field => st[field as keyof Subtenant] !== original[field as keyof Subtenant]);
           });
-
           const removed = subtenants.filter(st => !currentIds.has(st.id));
 
           console.log("Added:", added);
@@ -179,12 +176,15 @@ export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTe
 
                await Promise.all(requests);
 
-               console.log("✅ Subtenants synced successfully.");
+               // Refresh if success
                setValidationError(null);
                setIsEditing(false);
                setHasUnsavedChanges(false);
-
+               isCurrEditing?.(false);
                triggerRefresh?.();
+               if (onSubmit) {
+                    onSubmit(null)
+               }
           } catch (error: any) {
                console.error("❌ Error updating subtenants:", error);
                setValidationError(error.message || "Failed to update one or more subtenants.");
@@ -193,15 +193,17 @@ export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTe
 
      const handleChange = (index: number, field: string, value: string) => {
           setValidationError(null);
-          setFormData((prev) => {
-               const updated = prev.map((sub, i) =>
-                    i === index ? { ...sub, [field]: value } : sub
-               );
-               const hasChanges = JSON.stringify(updated) !== JSON.stringify(subtenants);
-               setHasUnsavedChanges(hasChanges);
-               isCurrEditing?.(hasChanges);
-               return updated;
-          });
+
+          const updated = formData.map((sub, i) =>
+               i === index ? { ...sub, [field]: value } : sub
+          );
+
+          setFormData(updated);
+
+          // side effects after state update
+          const hasChanges = JSON.stringify(updated) !== JSON.stringify(subtenants);
+          setHasUnsavedChanges(hasChanges);
+          isCurrEditing?.(hasChanges);
      };
 
      const handleAddSubtenant = () => {
@@ -209,7 +211,7 @@ export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTe
           if (formData.length >= maxOccupants - 1) return;
           setFormData((prev) => [
                ...prev,
-               { id: "", firstName: "", middleName: "", lastName: "", phoneNumber: "", link: "", mainTenantId: mainTenantId },
+               { id: "", firstName: "", middleInitial: "", lastName: "", phoneNumber: "", link: "", mainTenantId: mainTenantId },
           ]);
      };
 
@@ -365,7 +367,7 @@ function SubtenantInfo({
                     value={subtenant.middleInitial || ""}
                     placeholder="M"
                     maxLength={1}
-                    onChange={(e) => onChange("middleName", e.target.value)}
+                    onChange={(e) => onChange("middleInitial", e.target.value)}
                />
                <InputField
                     isEditing={isEditing}
