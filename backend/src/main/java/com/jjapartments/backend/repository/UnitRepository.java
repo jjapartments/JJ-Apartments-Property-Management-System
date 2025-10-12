@@ -39,6 +39,7 @@ public class UnitRepository {
                                 )
                             )
                         END) AS curr_occupants
+                        u.active_tenant_id
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
                 """;
@@ -87,6 +88,7 @@ public class UnitRepository {
                                     )
                                 )
                             END) AS curr_occupants
+                            u.active_tenant_id
                         FROM units u
                         LEFT JOIN tenants t ON u.active_tenant_id = t.id
                         WHERE u.unit_number = ?
@@ -134,6 +136,7 @@ public class UnitRepository {
                             )
                         )
                     END) AS curr_occupants
+                         u.active_tenant_id  
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
                     WHERE u.id = ?
@@ -152,7 +155,7 @@ public class UnitRepository {
         if (unitExists(unit, existingUnit.getId())) {
             throw new ErrorException("The unit already exists.");
         }
-        String sql = "UPDATE units SET unit_number = ?, name = ?, description = ?, price = ?, num_occupants = ? WHERE id = ?";
+        String sql = "UPDATE units SET unit_number = ?, name = ?, description = ?, price = ?, num_occupants = ?, active_tenant_id = ? WHERE id = ?";
         return jdbcTemplate.update(sql, unit.getUnitNumber(), unit.getName(), unit.getDescription(), unit.getPrice(),
                 unit.getNumOccupants(), id);
     }
@@ -176,6 +179,7 @@ public class UnitRepository {
                                 )
                             )
                         END) AS curr_occupants
+                        u.active_tenant_id
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
                     WHERE LOWER(u.name) LIKE ?
@@ -206,6 +210,7 @@ public class UnitRepository {
                                 )
                             )
                         END) AS curr_occupants
+                        u.active_tenant_id
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
                     WHERE u.name = ? AND u.unit_number = ?
