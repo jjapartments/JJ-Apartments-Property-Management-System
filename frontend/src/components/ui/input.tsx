@@ -1,6 +1,4 @@
 import * as React from "react"
-
-import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils"
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
@@ -31,32 +29,26 @@ interface InputFieldProps {
 }
 
 function InputField({ label, value, placeholder, type = "text", maxLength, required, isEditing, onChange }: InputFieldProps) {
-    const [inputValue, setInputValue] = useState(value);
-
-    useEffect(() => {
-        setInputValue(value);
-    }, [value]);
-
     return (
         <div className="flex flex-col">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-            {label}
-            {required && <span className="text-red-500"> *</span>}
-        </label>
-        <input
-            type={type}
-            value={isEditing ? inputValue : value}
-            readOnly={!isEditing}
-            onChange={onChange}
-            className={`w-full px-4 py-3 border rounded-lg transition-colors 
-            ${
-                isEditing
-                ? "bg-white border-gray-400 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
-                : "bg-gray-100 border-gray-200 text-gray-700 cursor-not-allowed"
-            }`}
-            placeholder={placeholder}
-            maxLength={maxLength}
-        />
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+                {label}
+                {required && <span className="text-red-500"> *</span>}
+            </label>
+            <input
+                type={type}
+                value={value}
+                readOnly={!isEditing}
+                onChange={onChange}
+                className={`w-full px-4 py-3 border rounded-lg transition-colors 
+                ${
+                    isEditing
+                    ? "bg-white border-gray-400 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                    : "bg-gray-100 border-gray-200 text-gray-700 cursor-not-allowed"
+                }`}
+                placeholder={placeholder}
+                maxLength={maxLength}
+            />
         </div>
     );
 }
