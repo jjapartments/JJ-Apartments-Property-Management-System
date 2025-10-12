@@ -38,7 +38,7 @@ public class UnitRepository {
                                     WHERE st.main_tenant_id = u.active_tenant_id
                                 )
                             )
-                        END) AS curr_occupants
+                        END) AS curr_occupants,
                         u.active_tenant_id
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
@@ -87,7 +87,7 @@ public class UnitRepository {
                                         WHERE st.main_tenant_id = u.active_tenant_id
                                     )
                                 )
-                            END) AS curr_occupants
+                            END) AS curr_occupants,
                             u.active_tenant_id
                         FROM units u
                         LEFT JOIN tenants t ON u.active_tenant_id = t.id
@@ -134,8 +134,8 @@ public class UnitRepository {
                                 WHERE st.main_tenant_id = u.active_tenant_id
                             )
                         )
-                    END) AS curr_occupants
-                         u.active_tenant_id
+                    END) AS curr_occupants,
+                    u.active_tenant_id
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
                     WHERE u.id = ?
@@ -177,7 +177,7 @@ public class UnitRepository {
                                     WHERE st.main_tenant_id = u.active_tenant_id
                                 )
                             )
-                        END) AS curr_occupants
+                        END) AS curr_occupants,
                         u.active_tenant_id
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
@@ -208,7 +208,7 @@ public class UnitRepository {
                                     WHERE st.main_tenant_id = u.active_tenant_id
                                 )
                             )
-                        END) AS curr_occupants
+                        END) AS curr_occupants,
                         u.active_tenant_id
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
