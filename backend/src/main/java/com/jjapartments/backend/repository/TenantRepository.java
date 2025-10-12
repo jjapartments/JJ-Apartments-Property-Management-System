@@ -23,6 +23,12 @@ public class TenantRepository{
         return jdbcTemplate.query(sql, new TenantRowMapper());
     }
 
+    @Transactional(readOnly = true)
+    public List<Tenant> findByUnitId(int unitId) {
+        String sql = "SELECT * FROM tenants WHERE units_id = ?";
+        return jdbcTemplate.query(sql, new TenantRowMapper(), unitId);
+    }
+
     // Method to update unit occupant count based on actual tenant count
     private void updateUnitOccupantCount(int unitId) {
         String countSql = "SELECT COUNT(*) FROM tenants WHERE units_id = ?";

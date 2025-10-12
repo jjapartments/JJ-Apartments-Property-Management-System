@@ -8,8 +8,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.jjapartments.backend.models.SubTenant;
 import com.jjapartments.backend.models.Tenant;
 import com.jjapartments.backend.repository.TenantRepository;
+import com.jjapartments.backend.repository.SubTenantRepository;
+import com.jjapartments.backend.dto.UnitTenantsDTO;
 import com.jjapartments.backend.exception.ErrorException;
 
 @RestController
@@ -17,6 +20,8 @@ import com.jjapartments.backend.exception.ErrorException;
 public class TenantController {
     @Autowired
     private TenantRepository tenantRepository;
+    @Autowired
+    private SubTenantRepository subTenantRepository;
 
     // Create
     @PostMapping("/add")
@@ -64,6 +69,22 @@ public class TenantController {
             return ResponseEntity.ok(tenantRepository.findById(id));
         } catch (ErrorException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+    
+    
+    @GetMapping("/unit/{unitId}")
+    public ResponseEntity<?> getAllTenantsForUnit(@PathVariable int unitId) {
+        try {
+            List<Tenant> mainTenants = tenantRepository.findByUnitId(unitId);
+            List<SubTenant> subTenants = subTenantRepository.findByUnitId(unitId);
+            
+            UnitTenantsDTO response = new UnitTenantsDTO(mainTenants, subTenants);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
