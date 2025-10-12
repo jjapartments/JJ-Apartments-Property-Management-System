@@ -220,8 +220,8 @@ export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTe
      };
 
      if ((subtenants.length === 0 && !isEditing) || (formData.length === 0 && !isEditing)) {
-          var totalOcc = 0
-          var canAdd = false
+          let totalOcc = 0
+          let canAdd = false
           if (!noTenant) {
                totalOcc = 1 + subtenants.length
                canAdd = totalOcc < maxOccupants;
