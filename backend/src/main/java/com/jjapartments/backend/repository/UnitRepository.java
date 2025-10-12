@@ -6,8 +6,8 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-ork.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.jjapartments.backend.models.Unit;
 import com.jjapartments.backend.mappers.UnitRowMapper;
@@ -29,7 +29,7 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        (CASE 
+                        (CASE
                             WHEN u.active_tenant_id IS NULL THEN 0
                             ELSE (
                                 1 + (
@@ -78,7 +78,7 @@ public class UnitRepository {
                             u.description,
                             u.price,
                             u.num_occupants,
-                            (CASE 
+                            (CASE
                                 WHEN u.active_tenant_id IS NULL THEN 0
                                 ELSE (
                                     1 + (
@@ -107,8 +107,7 @@ public class UnitRepository {
                     unit.getDescription(),
                     unit.getPrice(),
                     unit.getNumOccupants(),
-                    unit.getActiveTenantId() > 0 ? unit.getActiveTenantId() : null 
-            );    
+                    unit.getActiveTenantId() > 0 ? unit.getActiveTenantId() : null);
         }
     }
 
@@ -126,7 +125,7 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                    (CASE 
+                    (CASE
                         WHEN u.active_tenant_id IS NULL THEN 0
                         ELSE (
                             1 + (
@@ -136,7 +135,7 @@ public class UnitRepository {
                             )
                         )
                     END) AS curr_occupants
-                         u.active_tenant_id  
+                         u.active_tenant_id
                     FROM units u
                     LEFT JOIN tenants t ON u.active_tenant_id = t.id
                     WHERE u.id = ?
@@ -169,7 +168,7 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        (CASE 
+                        (CASE
                             WHEN u.active_tenant_id IS NULL THEN 0
                             ELSE (
                                 1 + (
@@ -200,7 +199,7 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        (CASE 
+                        (CASE
                             WHEN u.active_tenant_id IS NULL THEN 0
                             ELSE (
                                 1 + (
