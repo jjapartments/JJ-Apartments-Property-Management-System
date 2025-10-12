@@ -18,8 +18,9 @@ interface Subtenant {
 interface SubTenantDetailsProps {
      subtenants: Subtenant[];
      maxOccupants: number;
-     onUnsavedChange?: (hasChanges: boolean) => void;
-     noTenant: Boolean
+     isCurrEditing?: (hasChanges: boolean) => void;
+     noTenant: Boolean;
+     mainTenantId: number
 }
 interface SubtenantWIndex {
      subtenant: any;
@@ -27,7 +28,7 @@ interface SubtenantWIndex {
      isEditing: boolean;
 }
 
-export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, noTenant }: SubTenantDetailsProps) {
+export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTenant, mainTenantId }: SubTenantDetailsProps) {
      const [isEditing, setIsEditing] = useState(false);
      const [formData, setFormData] = useState<Subtenant[]>([]);
      const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -43,14 +44,15 @@ export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, no
           if (isEditing) {
                const hasChanges = JSON.stringify(formData) !== JSON.stringify(subtenants);
                setHasUnsavedChanges(hasChanges);
-               onUnsavedChange?.(hasChanges);
+               isCurrEditing?.(hasChanges);
           } else {
                setHasUnsavedChanges(false);
           }
-     }, [formData, isEditing, subtenants, onUnsavedChange]);
+     }, [formData, isEditing, subtenants, isCurrEditing]);
 
 
      const handleEdit = () => {
+          isCurrEditing?.(true)
           setIsEditing(true);
      };
 
@@ -58,7 +60,7 @@ export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, no
           setFormData(subtenants);
           setIsEditing(false);
           setHasUnsavedChanges(false);
-          onUnsavedChange?.(false);
+          isCurrEditing?.(false);
      };
 
      const validateForm = () => {
@@ -93,8 +95,18 @@ export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, no
           const originalIds = new Set(subtenants.map(st => st.id));
           const currentIds = new Set(formData.filter(st => st.id).map(st => st.id));
 
-          const added = formData.filter(st => !st.id);
-          const updated = formData.filter(st => st.id && JSON.stringify(st) !== JSON.stringify(subtenants.find(o => o.id === st.id)));
+          const added = formData.filter(st => st.id == "");
+
+          const FIELDS_TO_COMPARE = ["firstName", "middleInitial", "lastName", "phoneNumber", "link"];
+          const updated = formData.filter(st => {
+               if (!st.id) return false;
+               const original = subtenants.find(o => o.id === st.id);
+               if (!original) return false;
+               
+               // Compare only editable fields
+               return FIELDS_TO_COMPARE.some(field => st[field as keyof Subtenant] !== original[field as keyof Subtenant]);
+          });
+
           const removed = subtenants.filter(st => !currentIds.has(st.id));
 
           console.log("Added:", added);
@@ -120,16 +132,18 @@ export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, no
                // Add new subtenants
                for (const sub of added) {
                     requests.push(
-                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants/add`, {
-                         method: "POST",
-                         headers: { "Content-Type": "application/json" },
-                         body: JSON.stringify(sub),
-                    }).then(async res => {
-                         if (!res.ok) {
-                         const err = await res.json().catch(() => ({}));
-                         throw new Error(err?.error || `Failed to add subtenant ${sub.firstName || ""}`);
-                         }
-                    })
+                         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants/add`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify(sub),
+                         })
+                         .then(async res => {
+                              if (!res.ok) {
+                              const err = await res.json().catch(() => ({}));
+                              throw new Error(err?.error || `Failed to add subtenant ${sub.firstName || ""}`);
+                              }
+                              return res.json();
+                         })
                     );
                }
 
@@ -185,16 +199,17 @@ export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, no
                );
                const hasChanges = JSON.stringify(updated) !== JSON.stringify(subtenants);
                setHasUnsavedChanges(hasChanges);
-               onUnsavedChange?.(hasChanges);
+               isCurrEditing?.(hasChanges);
                return updated;
           });
      };
 
      const handleAddSubtenant = () => {
+          setIsEditing(true)
           if (formData.length >= maxOccupants - 1) return;
           setFormData((prev) => [
                ...prev,
-               { id: Date.now().toString(), firstName: "", middleName: "", lastName: "", phoneNumber: "", link: "" },
+               { id: "", firstName: "", middleName: "", lastName: "", phoneNumber: "", link: "", mainTenantId: mainTenantId },
           ]);
      };
 
@@ -232,7 +247,7 @@ export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, no
 
      return (
           <div>
-               <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-2 mb-4">
+               <div className="max-h-[50vh] overflow-y-auto space-y-3 pr-2 mb-4">
                {formData.map((s, index) => (
                     <SubtenantInfo
                     key={s.id || index}

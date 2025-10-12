@@ -8,12 +8,13 @@ import { useDataRefresh } from '@/contexts/DataContext';
 
 interface ApartmentDetails {
      unit: any;
-     onUnsavedChange?: (hasChanges: boolean) => void;
+     isCurrEditing?: (hasChanges: boolean) => void;
 }
 
-export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {
+export function ApartmentDetails({ unit, isCurrEditing }: ApartmentDetails) {
      const [isEditing, setIsEditing] = useState(false);
      const handleEdit = () => {
+          isCurrEditing?.(true)
           setIsEditing(true);
 	};
 
@@ -21,19 +22,20 @@ export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {
           name: unit.name || "",
           unitNumber: unit.unitNumber || "",
           description: unit.description || "",
-          num_occupants: unit.num_occupants || "",
+          numOccupants: unit.numOccupants || "",
           price: unit.price || "",
      });
      const [currentUnit, setCurrentUnit] = useState(unit);
 
      useEffect(() => {
           setCurrentUnit(unit);
+          console.log("UNIT HERE", unit)
 
           setFormData({
                name: unit.name || "",
                unitNumber: unit.unitNumber || "",
                description: unit.description || "",
-               num_occupants: unit.num_occupants || "",
+               numOccupants: unit.numOccupants || "",
                price: unit.price || "",
           });
      }, [unit]);
@@ -42,22 +44,23 @@ export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {
           name: unit.name || "",
           unitNumber: unit.unitNumber || "",
           description: unit.description || "",
-          num_occupants: unit.num_occupants || "",
+          numOccupants: unit.numOccupants || "",
           price: unit.price || "",
      });
      useEffect(() => {
-          onUnsavedChange?.(hasUnsavedChanges);
+          isCurrEditing?.(hasUnsavedChanges);
      }, [hasUnsavedChanges]);
 
      const handleCancel = () => {
           setIsEditing(false);
           setErrors({});
+          isCurrEditing?.(false)
 
           setFormData({
                name: unit.name || "",
                unitNumber: unit.unitNumber || "",
                description: unit.description || "",
-               num_occupants: unit.num_occupants || "",
+               numOccupants: unit.numOccupants || "",
                price: unit.price || "",
           });
      };
@@ -70,7 +73,7 @@ export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {
                name: formData.name,
                unitNumber: formData.unitNumber,
                description: formData.description,
-               num_occupants: Number(formData.num_occupants),
+               numOccupants: Number(formData.numOccupants),
                price: Number(formData.price),
           };
 
@@ -116,7 +119,7 @@ export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {
                formData.name === (unit.name || "") &&
                formData.unitNumber === (unit.unitNumber || "") &&
                formData.description === (unit.description || "") &&
-               String(formData.num_occupants) === String(unit.num_occupants || "") &&
+               String(formData.numOccupants) === String(unit.numOccupants || "") &&
                String(formData.price) === String(unit.price || "");
 
           if (isSame) {
@@ -135,9 +138,9 @@ export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {
           if (!formData.description.trim()) 
                newErrors.description = "Description is required.";
 
-          const maxNumValue = Number(formData.num_occupants);
+          const maxNumValue = Number(formData.numOccupants);
           if (isNaN(maxNumValue) || maxNumValue < 0)
-               newErrors.num_occupants = "Maximum occupants must be a non-negative number.";
+               newErrors.numOccupants = "Maximum occupants must be a non-negative number.";
 
           if (formData.price === "" || Number(formData.price) < 0)
                newErrors.price = "Price must be a non-negative number.";
@@ -186,10 +189,10 @@ export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {
                          isEditing={isEditing}
                          label="Maximum Number of Occupants"
                          type="number"
-                         value={formData.num_occupants || 1}
+                         value={formData.numOccupants || 1}
                          placeholder="e.g., 2"
                          required
-                         onChange={(e) => handleChange("num_occupants", e.target.value)}
+                         onChange={(e) => handleChange("numOccupants", e.target.value)}
                     />
                     <InputField
                          isEditing={isEditing}

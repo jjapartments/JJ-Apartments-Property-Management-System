@@ -8,16 +8,17 @@ import { Button } from "@/components/ui/button";
 
 interface TenantDetailsProps {
   tenant: any;
-  onUnsavedChange?: (hasChanges: boolean) => void;
+  isCurrEditing?: (hasChanges: boolean) => void;
   onSubmit?: (updatedData: any) => Promise<void> | void;
 }
 
-export function TenantDetails({ tenant, onUnsavedChange, onSubmit }: TenantDetailsProps) {
+export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetailsProps) {
      const [errors, setErrors] = useState<Record<string, string>>({});
      const { triggerRefresh } = useDataRefresh();
 
      const [isEditing, setIsEditing] = useState(false);
      const handleEdit = () => {
+          isCurrEditing?.(true)
           setIsEditing(true);
 	};
 
@@ -55,6 +56,7 @@ export function TenantDetails({ tenant, onUnsavedChange, onSubmit }: TenantDetai
      const handleCancel = () => {
           setIsEditing(false);
           setErrors({});
+          isCurrEditing?.(false)
 
           setFormData({
                firstName: tenant.firstName || "",
@@ -115,7 +117,7 @@ export function TenantDetails({ tenant, onUnsavedChange, onSubmit }: TenantDetai
 
           // ====== Inputs are valid, proceed to payload ====== //
           setIsEditing(false);
-          onUnsavedChange?.(false);
+          isCurrEditing?.(false);
 
           const payload = {
                firstName: formData.firstName,
@@ -133,7 +135,7 @@ export function TenantDetails({ tenant, onUnsavedChange, onSubmit }: TenantDetai
                     onSubmit(payload);
                }
                setIsEditing(false);
-               onUnsavedChange?.(false);
+               isCurrEditing?.(false);
                setErrors({});
 
                triggerRefresh()
@@ -153,7 +155,7 @@ export function TenantDetails({ tenant, onUnsavedChange, onSubmit }: TenantDetai
 	};
 
      useEffect(() => {
-          onUnsavedChange?.(hasUnsavedChanges);
+          isCurrEditing?.(hasUnsavedChanges);
      }, [hasUnsavedChanges]);
 
      if (!tenant || (!tenant.firstName && !isEditing)) {
