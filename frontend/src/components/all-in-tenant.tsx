@@ -3,15 +3,18 @@
 import { useState, useEffect } from "react";
 import { InputField } from "@/components/ui/input";
 import { DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { useDataRefresh } from '@/contexts/DataContext';
 import { Button } from "@/components/ui/button";
 
 interface TenantDetailsProps {
   tenant: any;
   onUnsavedChange?: (hasChanges: boolean) => void;
+  onSubmit?: (updatedData: any) => Promise<void> | void;
 }
 
-export function TenantDetails({ tenant, onUnsavedChange }: TenantDetailsProps) {
+export function TenantDetails({ tenant, onUnsavedChange, onSubmit }: TenantDetailsProps) {
      const [errors, setErrors] = useState<Record<string, string>>({});
+     const { triggerRefresh } = useDataRefresh();
 
      const [isEditing, setIsEditing] = useState(false);
      const handleEdit = () => {
@@ -36,6 +39,19 @@ export function TenantDetails({ tenant, onUnsavedChange }: TenantDetailsProps) {
           messengerLink: tenant.messengerLink || "",
      });
 
+     useEffect(() => {
+          if (tenant) {
+               setFormData({
+                    firstName: tenant.firstName || "",
+                    middleName: tenant.middleName || "",
+                    lastName: tenant.lastName || "",
+                    email: tenant.email || "",
+                    phoneNumber: tenant.phoneNumber || "",
+                    messengerLink: tenant.messengerLink || "",
+               });
+          }
+     }, [tenant]);
+
      const handleCancel = () => {
           setIsEditing(false);
           setErrors({});
@@ -53,6 +69,21 @@ export function TenantDetails({ tenant, onUnsavedChange }: TenantDetailsProps) {
      const handleSubmit = () => {
           const newErrors: Record<string, string> = {};
 
+          // Check if same
+          const isSame =
+               formData.firstName === (tenant.firstName || "") &&
+               formData.middleName === (tenant.middleName || "") &&
+               formData.lastName === (tenant.lastName || "") &&
+               formData.email === (tenant.email || "") &&
+               formData.phoneNumber === (tenant.phoneNumber || "") &&
+               formData.messengerLink === (tenant.messengerLink || "");
+
+          if (isSame) {
+               setErrors({ general: "No changes made." });
+               return;
+          }
+
+          // Check valid input
           if (!formData.firstName.trim()) 
                newErrors.firstName = "First name is required.";
           if (!formData.lastName.trim()) 
@@ -79,13 +110,37 @@ export function TenantDetails({ tenant, onUnsavedChange }: TenantDetailsProps) {
 
           setErrors(newErrors);
 
-          if (Object.keys(newErrors).length > 0) return;
+          if (Object.keys(newErrors).length > 0) 
+               return;
 
-          console.log("Submitted values:", formData);
+          // ====== Inputs are valid, proceed to payload ====== //
           setIsEditing(false);
           onUnsavedChange?.(false);
 
-          // [TO DO] :: api call
+          const payload = {
+               firstName: formData.firstName,
+               middleName: formData.middleName,
+               lastName: formData.lastName,
+               email: formData.email,
+               phoneNumber: formData.phoneNumber,
+               messengerLink: formData.messengerLink,
+               unitId: tenant.unitId,
+          };
+          console.log("Submitted values:", payload);
+
+          try {
+               if (onSubmit) {
+                    onSubmit(payload);
+               }
+               setIsEditing(false);
+               onUnsavedChange?.(false);
+               setErrors({});
+
+               triggerRefresh()
+          } catch (err: any) {
+               const message = err?.message || "Failed to update tenant.";
+               setErrors({ submit: message })
+          }
      };
 
      const handleChange = (field: string, value: string) => {

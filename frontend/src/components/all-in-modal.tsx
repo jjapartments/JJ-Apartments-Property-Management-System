@@ -13,9 +13,10 @@ interface AllInModalProps {
 	selectedTab: String
 	onClose: () => void
 	tenant: any; 
+	onUpdateTenant?: (updatedData: any) => Promise<void> | void;
 }
 
-export function AllInModal({ open, selectedTab, onClose, tenant }: AllInModalProps) {
+export function AllInModal({ open, selectedTab, onClose, tenant, onUpdateTenant }: AllInModalProps) {
 	const [activeTab, setActiveTab] = useState<"apartment" | "tenant" | "subtenants">(
 		selectedTab as "apartment" | "tenant" | "subtenants"
 	);
@@ -24,7 +25,7 @@ export function AllInModal({ open, selectedTab, onClose, tenant }: AllInModalPro
 	const renderTabContent = () => {
 		switch (activeTab) {
 			case "tenant":
-				return <TenantDetails tenant={tenant} onUnsavedChange={setHasUnsavedChanges} />;
+				return <TenantDetails tenant={tenant} onUnsavedChange={setHasUnsavedChanges} onSubmit={onUpdateTenant}/>;
 			case "apartment":
 				return <ApartmentDetails unit={tenant.unit} onUnsavedChange={setHasUnsavedChanges} />;
 			case "subtenants":

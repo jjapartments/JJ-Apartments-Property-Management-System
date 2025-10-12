@@ -173,7 +173,7 @@ export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, no
                )}
                </div>
 
-               <hr className="border-t border-gray-200" />
+               <hr className="border-t border-gray-200 mb-3" />
 
                <DialogFooter className="w-full flex items-center justify-between">
                     <div className="flex-1">

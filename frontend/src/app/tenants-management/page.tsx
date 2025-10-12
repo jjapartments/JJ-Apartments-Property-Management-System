@@ -291,6 +291,7 @@ export default function TenantsManagementPage() {
     };
 
     const handleViewTenant = (tenant: TenantWithUnitDetails) => {
+        setEditingTenant(tenant)
         setSelectedTenant(tenant);
         setIsViewModalOpen(true);
     };
@@ -351,11 +352,15 @@ export default function TenantsManagementPage() {
             }
             
             console.log('Tenant updated successfully, triggering refresh...');
-            toggleModal(); 
+            //toggleModal(); 
             console.log("About to call triggerRefresh()");
             triggerRefresh(); // Trigger refresh in other components
             console.log("triggerRefresh() called successfully");
             fetchTenants(); 
+
+            if (selectedTenant) {
+                setSelectedTenant({ ...selectedTenant, ...tenantUpdatePayload });
+            }
         } catch (error) {
             console.error('Error updating tenant:', error);
             setErrorMessage('An unexpected error occurred while updating the tenant. Please try again.');
@@ -581,6 +586,7 @@ export default function TenantsManagementPage() {
                     selectedTab={"tenant"}
                     onClose={() => {setIsViewModalOpen(false), setSelectedTenant(null)}}
                     tenant={selectedTenant}
+                    onUpdateTenant={handleUpdateTenant}
                 />
             )}
 
