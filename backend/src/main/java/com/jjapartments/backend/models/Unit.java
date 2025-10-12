@@ -10,7 +10,6 @@ public class Unit {
     private int numOccupants;
     private int currOccupants;
     private String contactNumber;
-    private int activeTenantId; 
 
     public int getId() {
         return id;
@@ -74,13 +73,5 @@ public class Unit {
 
     public void setContactNumber(String contactNumber) {
         this.contactNumber = contactNumber;
-    }
-
-    public int getActiveTenantId() {
-        return activeTenantId;
-    }
-
-    public void setActiveTenantId(int activeTenantId) {
-        this.activeTenantId = activeTenantId;
     }
 }

@@ -29,7 +29,6 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        t.phone_number AS contact_number,
                         (CASE WHEN u.active_tenant_id IS NULL THEN 0 ELSE 1 END) AS curr_occupants
                         -- TODO: Adjust curr_occupants logic when sub-tenants feature is implemented
                     FROM units u
@@ -70,7 +69,6 @@ public class UnitRepository {
                             u.description,
                             u.price,
                             u.num_occupants,
-                            t.phone_number AS contact_number,
                             (CASE WHEN u.active_tenant_id IS NULL THEN 0 ELSE 1 END) AS curr_occupants
                         FROM units u
                         LEFT JOIN tenants t ON u.active_tenant_id = t.id
@@ -109,7 +107,6 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        t.phone_number AS contact_number,
                         (CASE WHEN u.active_tenant_id IS NULL THEN 0 ELSE 1 END) AS curr_occupants
                         -- TODO: Adjust curr_occupants logic when sub-tenants feature is implemented
                     FROM units u
@@ -144,7 +141,6 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        t.phone_number AS contact_number,
                         (CASE WHEN u.active_tenant_id IS NULL THEN 0 ELSE 1 END) AS curr_occupants
                         --TODO: Adjust curr_occupants logic when sub-tenants feature is implemented
                     FROM units u
@@ -167,7 +163,6 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        t.phone_number AS contact_number,
                         (CASE WHEN u.active_tenant_id IS NULL THEN 0 ELSE 1 END) AS curr_occupants
                         --TODO: Adjust curr_occupants logic when sub-tenants feature is implemented
                     FROM units u
