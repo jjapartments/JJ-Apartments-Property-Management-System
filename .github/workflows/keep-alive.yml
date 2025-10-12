@@ -1,0 +1,27 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Runs every 14 minutes, 24/7
+    - cron: "*/14 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping-backend:
+    name: Ping Backend Health Endpoint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping backend
+        run: |
+          echo "🏓 Pinging backend at $(date)"
+
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.BACKEND_URL }}/actuator/health || echo "000")
+
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Backend is alive (HTTP $RESPONSE)"
+          else
+            echo "⚠️ Backend responded with HTTP $RESPONSE"
+          fi
+
+          echo "Next ping in 14 minutes"
