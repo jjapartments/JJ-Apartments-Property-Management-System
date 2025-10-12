@@ -144,7 +144,6 @@ export function ApartmentList() {
     };*/
 
     const handleSearch = async (searchTerm: string) => {
-      console.log(searchTerm)
       if (searchTerm === '') {
         setForViewTenantData(fullTenantData)
         setUnits(fullTenantData?.map(t => t.unit) || []);
@@ -171,6 +170,7 @@ export function ApartmentList() {
     const formatPrice = (price: number) => {
         return price.toLocaleString('en-US');
     };
+
     useEffect(() => {
         const fetchUnits = async () => {
             try {
@@ -181,7 +181,6 @@ export function ApartmentList() {
               }
               const unitData = await res.json();
               setUnits(unitData);
-              console.log(unitData)
 
               const tenantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants`);
               if (!tenantRes.ok) {
@@ -189,61 +188,17 @@ export function ApartmentList() {
               }
               const tenantData = await tenantRes.json();
 
-
-              /*const subtenantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants`);
+              const subtenantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants`);
               if (!subtenantRes.ok) {
                 throw new Error("Error fetching apartment data");
               }
-              const subtenantData = await subtenantRes.json();*/
+              const subtenantData = await subtenantRes.json();
 
-
-              const subtenantData = [
-                {
-                    id: 1,
-                    firstName: "Ana",
-                    middleInitial: "M",
-                    lastName: "Cruz",
-                    phoneNumber: "09170001111",
-                    messengerLink: "https://m.me/ana.cruz",
-                    main_tenant_id: 1
-                },
-                {
-                    id: 2,
-                    firstName: "Pedro",
-                    middleInitial: "L",
-                    lastName: "Reyes",
-                    phoneNumber: "09170002222",
-                    messengerLink: "https://m.me/pedro.reyes",
-                    main_tenant_id: 2
-                },
-                {
-                    id: 3,
-                    firstName: "Liza",
-                    middleInitial: null,
-                    lastName: "Reyes",
-                    phoneNumber: "09170003333",
-                    messengerLink: "https://m.me/liza.reyes",
-                    main_tenant_id: 2
-                },
-                {
-                    id: 4,
-                    firstName: "Tyler",
-                    middleInitial: "M",
-                    lastName: "Cruz",
-                    phoneNumber: "09170001111",
-                    messengerLink: "https://m.me/tyler.cruz",
-                    main_tenant_id: 1
-                },
-            ];
-
-            console.log("All units: ", unitData)
-            console.log("All tenant: ", tenantData)
-
-            const processed: TenantWithUnitDetails[] = unitData.map((u: Unit) => {
+              const processed: TenantWithUnitDetails[] = unitData.map((u: Unit) => {
               const tenant = tenantData.find((t: any) => Number(t.unitId) === u.id);
 
               const tenantSubs = subtenantData.filter(
-                (s: any) => s.main_tenant_id === tenant?.id
+                (s: any) => s.mainTenantId === tenant?.id
               );
 
               if (tenant) {
@@ -273,7 +228,6 @@ export function ApartmentList() {
                 }
             });
 
-              console.log("Full tenant data:", processed);
               setFullTenantData(processed);
               setForViewTenantData(processed)
             } catch (error: any) {
@@ -311,20 +265,12 @@ export function ApartmentList() {
         if (!tenantRes.ok) throw new Error("Error fetching tenants");
         const tenantData = await tenantRes.json();
 
-        const subtenantData = [
-          {
-            id: 1, firstName: "Ana", middleInitial: "M", lastName: "Cruz",
-            phoneNumber: "09170001111", messengerLink: "https://m.me/ana.cruz", main_tenant_id: 1
-          },
-          {
-            id: 2, firstName: "Pedro", middleInitial: "L", lastName: "Reyes",
-            phoneNumber: "09170002222", messengerLink: "https://m.me/pedro.reyes", main_tenant_id: 2
-          },
-        ];
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants`);
+        const subtenants = await response.json();
 
         const processed: TenantWithUnitDetails[] = unitData.map((u: Unit) => {
           const tenant = tenantData.find((t: any) => Number(t.unitId) === u.id);
-          const tenantSubs = subtenantData.filter((s: any) => s.main_tenant_id === tenant?.id);
+          const tenantSubs = subtenants.filter((s: any) => s.mainTenantId === tenant?.id);
 
           if (tenant) {
             return {

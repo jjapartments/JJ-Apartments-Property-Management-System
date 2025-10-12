@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 interface Subtenant {
      id?: string;
      firstName: string;
-     middleName?: string;
+     middleInitial?: string;
      lastName: string;
      phoneNumber: string;
      link: string;
@@ -65,7 +65,7 @@ export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, no
                if (!sub.firstName || !sub.lastName)
                     errors.push(`Name fields cannot be empty.`);
 
-               if (sub.middleName && sub.middleName.length > 1)
+               if (sub.middleInitial && sub.middleInitial.length > 1)
                     errors.push(`Middle initial must be one letter.`);
 
                if (!/^(09|\+639)\d{9}$/.test(sub.phoneNumber))
@@ -265,7 +265,7 @@ function SubtenantInfo({
                <InputField
                     isEditing={isEditing}
                     label="Middle Initial"
-                    value={subtenant.middleName || ""}
+                    value={subtenant.middleInitial || ""}
                     placeholder="M"
                     maxLength={1}
                     onChange={(e) => onChange("middleName", e.target.value)}

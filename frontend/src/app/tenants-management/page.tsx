@@ -8,7 +8,6 @@ import { TenantMgt } from "@/components/TenantMgt";
 import { AllInModal } from "@/components/all-in-modal";
 import { Mail, Phone, Building, DoorClosed, Users } from "lucide-react";
 import { DeleteModal } from "@/components/delete-modal";
-import { AllInModalBase } from "@/components/all-in-modal-base";
 
 type SubTenant = {
     firstName: string,
@@ -104,48 +103,9 @@ export default function TenantsManagementPage() {
             const units = await unitsResponse.json();
             const tenants = await tenantsResponse.json();
 
-            //const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants`);
-            //const subtenants = await response.json();
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants`);
+            const subtenants = await response.json();
 
-            const subtenants = [
-                {
-                    id: 1,
-                    firstName: "Ana",
-                    middleInitial: "M",
-                    lastName: "Cruz",
-                    phoneNumber: "09170001111",
-                    messengerLink: "https://m.me/ana.cruz",
-                    main_tenant_id: 1
-                },
-                {
-                    id: 2,
-                    firstName: "Pedro",
-                    middleInitial: "L",
-                    lastName: "Reyes",
-                    phoneNumber: "09170002222",
-                    messengerLink: "https://m.me/pedro.reyes",
-                    main_tenant_id: 2
-                },
-                {
-                    id: 3,
-                    firstName: "Liza",
-                    middleInitial: null,
-                    lastName: "Reyes",
-                    phoneNumber: "09170003333",
-                    messengerLink: "https://m.me/liza.reyes",
-                    main_tenant_id: 2
-                },
-                {
-                    id: 4,
-                    firstName: "Tyler",
-                    middleInitial: "M",
-                    lastName: "Cruz",
-                    phoneNumber: "09170001111",
-                    messengerLink: "https://m.me/tyler.cruz",
-                    main_tenant_id: 1
-                },
-            ];
-            
             const processedTenants = tenants.map(t => {
                 const unitInfo = units.find(u => u.id === t.unitId);
                 return {
@@ -157,7 +117,7 @@ export default function TenantsManagementPage() {
                         name: 'Unknown Building',
                         unitNumber: 'Unknown Unit'
                     },
-                    subTenants: subtenants.filter(s => s.main_tenant_id === t.id)
+                    subTenants: subtenants.filter(s => s.mainTenantId === t.id)
                 };
             });
 
