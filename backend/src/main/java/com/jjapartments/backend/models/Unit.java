@@ -9,7 +9,7 @@ public class Unit {
     private float price;
     private int numOccupants;
     private int currOccupants;
-    private String contactNumber;
+    private int activeTenantId;
 
     public int getId() {
         return id;
@@ -67,11 +67,11 @@ public class Unit {
         this.currOccupants = currOccupants;
     }
 
-    public String getContactNumber() {
-        return this.contactNumber;
+    public int getActiveTenantId() {
+        return activeTenantId;
     }
-
-    public void setContactNumber(String contactNumber) {
-        this.contactNumber = contactNumber;
+    
+    public void setActiveTenantId(int activeTenantId) {
+        this.activeTenantId = activeTenantId;
     }
 }

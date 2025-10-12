@@ -18,6 +18,8 @@ public class TenantRowMapper implements RowMapper<Tenant>{
         tenant.setEmail(rs.getString("email"));
         tenant.setPhoneNumber(rs.getString("phone_number"));
         tenant.setUnitId(rs.getInt("units_id"));
+        tenant.setMoveInDate(rs.getString("move_in_date"));
+        tenant.setMoveOutDate(rs.getString("move_out_date"));
         return tenant;
     }
 }

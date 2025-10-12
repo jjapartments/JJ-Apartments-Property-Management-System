@@ -141,4 +141,15 @@ public class SubTenantRepository {
         String sql = "SELECT * FROM sub_tenants WHERE main_tenant_id = ?";
         return jdbcTemplate.query(sql, new SubTenantRowMapper(), mainTenantId);
     }
+
+    @Transactional(readOnly = true)
+    public List<SubTenant> findByUnitId(int unitId) {
+        String sql = """
+            SELECT st.* 
+            FROM sub_tenants st
+            INNER JOIN tenants t ON st.main_tenant_id = t.id
+            WHERE t.units_id = ?
+        """;
+        return jdbcTemplate.query(sql, new SubTenantRowMapper(), unitId);
+    }
 }

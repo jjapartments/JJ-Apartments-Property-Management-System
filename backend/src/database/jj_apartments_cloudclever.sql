@@ -63,6 +63,8 @@ CREATE TABLE IF NOT EXISTS `tenants` (
   `email` VARCHAR(45) NOT NULL,
   `phone_number` VARCHAR(15) NOT NULL,
   `units_id` INT NOT NULL,
+  `move_in_date` DATE NULL,
+  `move_out_date` DATE NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE,
   UNIQUE INDEX `phone_number_UNIQUE` (`phone_number` ASC) VISIBLE,
