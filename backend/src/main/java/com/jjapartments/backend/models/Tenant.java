@@ -9,6 +9,8 @@ public class Tenant {
     private String email;
     private String phoneNumber;
     private int unitId;
+    private String moveInDate;
+    private String moveOutDate;
 
        
     public int getId() {
@@ -65,5 +67,21 @@ public class Tenant {
 
     public void setUnitId(int unitId) {
         this.unitId = unitId;
+    }
+
+    public String getMoveInDate() {
+        return moveInDate;
+    }
+
+    public void setMoveInDate(String moveInDate) {
+        this.moveInDate = moveInDate;
+    }
+
+    public String getMoveOutDate() {
+        return moveOutDate;
+    }
+
+    public void setMoveOutDate(String moveOutDate) {
+        this.moveOutDate = moveOutDate;
     }
 }

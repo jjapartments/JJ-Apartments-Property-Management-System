@@ -63,6 +63,8 @@ CREATE TABLE IF NOT EXISTS `tenants` (
   `email` VARCHAR(45) NOT NULL,
   `phone_number` VARCHAR(15) NOT NULL,
   `units_id` INT NOT NULL,
+  `move_in_date` DATE NULL,
+  `move_out_date` DATE NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE,
   UNIQUE INDEX `phone_number_UNIQUE` (`phone_number` ASC) VISIBLE,
@@ -112,9 +114,9 @@ SELECT * FROM tenants;
 
 
 -- -----------------------------------------------------
--- Table `jj_apartments`.`sub_tenants`
+-- Table `sub_tenants`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `jj_apartments`.`sub_tenants` (
+CREATE TABLE IF NOT EXISTS `sub_tenants` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `last_name` VARCHAR(45) NOT NULL,
   `first_name` VARCHAR(45) NOT NULL,
@@ -128,7 +130,7 @@ CREATE TABLE IF NOT EXISTS `jj_apartments`.`sub_tenants` (
   UNIQUE INDEX `messenger_link_UNIQUE` (`messenger_link` ASC) VISIBLE,
   CONSTRAINT `main_tenant_id`
     FOREIGN KEY (`main_tenant_id`)
-    REFERENCES `jj_apartments`.`tenants` (`id`)
+    REFERENCES `tenants` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
