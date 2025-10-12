@@ -361,6 +361,11 @@ export default function TenantsManagementPage() {
             if (selectedTenant) {
                 setSelectedTenant({ ...selectedTenant, ...tenantUpdatePayload });
             }
+
+            setIsViewModalOpen(false);
+            setTimeout(() => {
+                setIsViewModalOpen(true);
+            }, 150);
         } catch (error) {
             console.error('Error updating tenant:', error);
             setErrorMessage('An unexpected error occurred while updating the tenant. Please try again.');

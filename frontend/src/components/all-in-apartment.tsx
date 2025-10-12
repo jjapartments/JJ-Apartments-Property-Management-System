@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { InputField } from "@/components/ui/input";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useDataRefresh } from '@/contexts/DataContext';
 
 interface ApartmentDetails {
   unit: any;
@@ -20,15 +21,28 @@ export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {
           name: unit.name || "",
           unitNumber: unit.unitNumber || "",
           description: unit.description || "",
-          max_num: unit.max_num || "",
+          num_occupants: unit.num_occupants || "",
           price: unit.price || "",
      });
+     const [currentUnit, setCurrentUnit] = useState(unit);
+
+     useEffect(() => {
+          setCurrentUnit(unit);
+
+          setFormData({
+               name: unit.name || "",
+               unitNumber: unit.unitNumber || "",
+               description: unit.description || "",
+               num_occupants: unit.num_occupants || "",
+               price: unit.price || "",
+          });
+     }, [unit]);
 
      const hasUnsavedChanges = JSON.stringify(formData) !== JSON.stringify({
           name: unit.name || "",
           unitNumber: unit.unitNumber || "",
           description: unit.description || "",
-          max_num: unit.max_num || "",
+          num_occupants: unit.num_occupants || "",
           price: unit.price || "",
      });
      useEffect(() => {
@@ -43,19 +57,51 @@ export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {
                name: unit.name || "",
                unitNumber: unit.unitNumber || "",
                description: unit.description || "",
-               max_num: unit.max_num || "",
+               num_occupants: unit.num_occupants || "",
                price: unit.price || "",
           });
      };
 
-     const handleSubmit = () => {
+     const { triggerRefresh } = useDataRefresh();
+     const handleSubmit = async () => {
           if (!validateForm()) return;
+
+          const body = {
+               name: formData.name,
+               unitNumber: formData.unitNumber,
+               description: formData.description,
+               num_occupants: Number(formData.num_occupants),
+               price: Number(formData.price),
+          };
 
           console.log("Submitted values:", formData);
           setIsEditing(false);
           setErrors({});
 
-          // [TO DO] :: api call
+          try {
+               const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units/update/${unit.id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+               });
+
+               if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err?.error || "Failed to update unit record.");
+               }
+
+               console.log("Unit updated successfully");
+               setIsEditing(false);
+               setErrors({});
+
+               setCurrentUnit(body); 
+               setFormData(body)
+
+               triggerRefresh();
+          } catch (error: any) {
+               console.error("Error updating unit:", error);
+               setErrors({ general: error.message || "Failed to update unit record." });
+          }
      };
 
      const handleChange = (field: string, value: string) => {
@@ -65,6 +111,21 @@ export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {
 
      const [errors, setErrors] = useState<{ [key: string]: string }>({});
      const validateForm = () => {
+          // Check is inputs are same
+          const isSame =
+               formData.name === (unit.name || "") &&
+               formData.unitNumber === (unit.unitNumber || "") &&
+               formData.description === (unit.description || "") &&
+               String(formData.num_occupants) === String(unit.num_occupants || "") &&
+               String(formData.price) === String(unit.price || "");
+
+          if (isSame) {
+               setErrors({ general: "No changes made." });
+               return true;
+          }
+
+          // Check if inputs are valid
+
           const newErrors: { [key: string]: string } = {};
 
           if (!formData.name.trim()) 
@@ -74,9 +135,9 @@ export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {
           if (!formData.description.trim()) 
                newErrors.description = "Description is required.";
 
-          const maxNumValue = Number(formData.max_num);
+          const maxNumValue = Number(formData.num_occupants);
           if (isNaN(maxNumValue) || maxNumValue < 0)
-               newErrors.max_num = "Maximum occupants must be a non-negative number.";
+               newErrors.num_occupants = "Maximum occupants must be a non-negative number.";
 
           if (formData.price === "" || Number(formData.price) < 0)
                newErrors.price = "Price must be a non-negative number.";
@@ -125,10 +186,10 @@ export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {
                          isEditing={isEditing}
                          label="Maximum Number of Occupants"
                          type="number"
-                         value={formData.max_num || 1}
+                         value={formData.num_occupants || 1}
                          placeholder="e.g., 2"
                          required
-                         onChange={(e) => handleChange("max_num", e.target.value)}
+                         onChange={(e) => handleChange("num_occupants", e.target.value)}
                     />
                     <InputField
                          isEditing={isEditing}

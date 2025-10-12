@@ -43,7 +43,7 @@ export type TenantWithUnitDetails = Omit<Tenant, 'unit'> & {
 
 
 export function ApartmentList() {
-  const { refreshTrigger } = useDataRefresh();
+  const { refreshTrigger, triggerRefresh } = useDataRefresh();
   const [units, setUnits] = useState<Unit[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -121,7 +121,8 @@ export function ApartmentList() {
           }
     
           console.log("Unit updated successfully");
-          window.location.reload();
+          //window.location.reload();
+          triggerRefresh();
         } catch (error: any) {
           setError(error.message || "Failed to update unit record.")
         }
@@ -180,6 +181,7 @@ export function ApartmentList() {
               }
               const unitData = await res.json();
               setUnits(unitData);
+              console.log(unitData)
 
               const tenantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants`);
               if (!tenantRes.ok) {
@@ -280,6 +282,86 @@ export function ApartmentList() {
         };
         fetchUnits();
     }, []);
+
+    useEffect(() => {
+      if (refreshTrigger > 0) {
+        console.log("Refreshing Apartment List...");
+        fetchUnitsAndTenants();
+      }
+    }, [refreshTrigger]);
+
+    useEffect(() => {
+      if (selectedTenant && fullTenantData) {
+        const updated = fullTenantData.find(
+          ftd => ftd.unit.id === selectedTenant.unit.id
+        );
+
+        if (updated) setSelectedTenant(updated);
+      }
+    }, [units, fullTenantData]);
+
+    const fetchUnitsAndTenants = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units`);
+        if (!res.ok) throw new Error("Error fetching units");
+        const unitData = await res.json();
+
+        const tenantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants`);
+        if (!tenantRes.ok) throw new Error("Error fetching tenants");
+        const tenantData = await tenantRes.json();
+
+        const subtenantData = [
+          {
+            id: 1, firstName: "Ana", middleInitial: "M", lastName: "Cruz",
+            phoneNumber: "09170001111", messengerLink: "https://m.me/ana.cruz", main_tenant_id: 1
+          },
+          {
+            id: 2, firstName: "Pedro", middleInitial: "L", lastName: "Reyes",
+            phoneNumber: "09170002222", messengerLink: "https://m.me/pedro.reyes", main_tenant_id: 2
+          },
+        ];
+
+        const processed: TenantWithUnitDetails[] = unitData.map((u: Unit) => {
+          const tenant = tenantData.find((t: any) => Number(t.unitId) === u.id);
+          const tenantSubs = subtenantData.filter((s: any) => s.main_tenant_id === tenant?.id);
+
+          if (tenant) {
+            return {
+              id: tenant.id,
+              firstName: tenant.firstName,
+              middleName: tenant.middleInitial || tenant.middleName,
+              lastName: tenant.lastName,
+              email: tenant.email,
+              phoneNumber: tenant.phoneNumber,
+              dateAdded: tenant.dateAdded,
+              subTenants: tenantSubs,
+              unit: u,
+            };
+          } else {
+            return {
+              id: null,
+              firstName: null,
+              middleName: null,
+              lastName: null,
+              email: null,
+              phoneNumber: null,
+              dateAdded: null,
+              subTenants: [],
+              unit: u,
+            } as TenantWithUnitDetails;
+          }
+        });
+
+        setFullTenantData(processed);
+        setForViewTenantData(processed);
+        setUnits(unitData);
+      } catch (err: any) {
+        setError(err.message || "Error fetching data");
+      } finally {
+        setLoading(false);
+      }
+    };
 
     // Listen for refresh triggers from other components (like when tenants are added/removed)
     useEffect(() => {
