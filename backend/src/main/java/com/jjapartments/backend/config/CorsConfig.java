@@ -20,25 +20,41 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
+        registry.addMapping("/api/**")
                 .allowedOrigins(allowedOrigins.split(","))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);
+
+        registry.addMapping("/actuator/**")
+                .allowedOrigins("*")
+                .allowedMethods("GET", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(false)
+                .maxAge(3600);
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        CorsConfiguration apiConfiguration = new CorsConfiguration();
+        apiConfiguration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        apiConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        apiConfiguration.setAllowedHeaders(List.of("*"));
+        apiConfiguration.setAllowCredentials(true);
+        apiConfiguration.setMaxAge(3600L);
+
+        CorsConfiguration actuatorConfiguration = new CorsConfiguration();
+        actuatorConfiguration.setAllowedOrigins(List.of("*")); // Public access
+        actuatorConfiguration.setAllowedMethods(Arrays.asList("GET", "OPTIONS"));
+        actuatorConfiguration.setAllowedHeaders(List.of("*"));
+        actuatorConfiguration.setAllowCredentials(false);
+        actuatorConfiguration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/api/**", apiConfiguration);
+        source.registerCorsConfiguration("/actuator/**", actuatorConfiguration);
+
         return source;
     }
 }
