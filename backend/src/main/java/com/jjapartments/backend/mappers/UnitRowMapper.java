@@ -19,6 +19,7 @@ public class UnitRowMapper implements RowMapper<Unit> {
         unit.setPrice(rs.getFloat("price"));
         unit.setNumOccupants(rs.getInt("num_occupants"));
         unit.setCurrOccupants(rs.getInt("curr_occupants"));
+        unit.setActiveTenantId(rs.getInt("active_tenant_id"));
 
         // Will be null if no active tenant
         unit.setContactNumber(rs.getString("contact_number"));
