@@ -242,9 +242,9 @@ export default function TenantsManagementPage() {
             console.log("Tenant added successfully, triggering refresh...");
             toggleModal();
             console.log("About to call triggerRefresh()");
-            triggerRefresh(); // Trigger refresh in other components
+            await fetchTenants(); // Wait for data to refresh first
+            triggerRefresh(); // Then trigger refresh in other components
             console.log("triggerRefresh() called successfully");
-            fetchTenants();
         } catch (error) {
             console.error('Error adding tenant:', error);
             setErrorMessage('An unexpected error occurred while adding the tenant. Please try again.');
@@ -321,19 +321,17 @@ export default function TenantsManagementPage() {
                 return;
             }
             
-            /*console.log("About to call triggerRefresh()");
+            console.log("About to call triggerRefresh()");
+            await fetchTenants(); // Wait for data to refresh first
             triggerRefresh();
             console.log("triggerRefresh() called successfully");
-            fetchTenants();*/ 
 
             if (selectedTenant) {
-                setSelectedTenant({ ...selectedTenant, ...tenantUpdatePayload });
+                const updatedTenant = tenants.find(t => t.id === selectedTenant.id);
+                if (updatedTenant) {
+                    setSelectedTenant(updatedTenant);
+                }
             }
-
-            /*setIsViewModalOpen(false);
-            setTimeout(() => {
-                setIsViewModalOpen(true);
-            }, 150);*/
         } catch (error) {
             console.error('Error updating tenant:', error);
             setErrorMessage('An unexpected error occurred while updating the tenant. Please try again.');
@@ -363,9 +361,9 @@ export default function TenantsManagementPage() {
         setDeleteModalOpen(false);
         setTenantToDelete(null);
         console.log("About to call triggerRefresh()");
-        triggerRefresh(); // Trigger refresh in other components
+        await fetchTenants(); // Wait for data to refresh first
+        triggerRefresh(); // Then trigger refresh in other components
         console.log("triggerRefresh() called successfully");
-        fetchTenants();
     };
 
     const cancelDelete = () => {
