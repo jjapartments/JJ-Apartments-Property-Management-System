@@ -60,12 +60,24 @@ jobs:
       - name: Verify application.properties
         working-directory: ./backend
         run: |
-          if grep -q "jdbc:mysql://localhost" src/main/resources/application.properties; then
-            echo "❌ ERROR: application.properties contains hardcoded localhost credentials"
-            echo "Please use template placeholders instead"
+          CHANGEME_COUNT=$(grep -o "changeme" src/main/resources/application.properties | wc -l)
+
+          if [ "$CHANGEME_COUNT" -ne 2 ]; then
+            echo "❌ ERROR: application.properties validation failed"
+            echo "Expected exactly 2 occurrences of 'changeme' (username and password placeholders)"
+            echo "Found: $CHANGEME_COUNT occurrences"
+            echo ""
+            echo "This usually means:"
+            echo "  - Hardcoded credentials were committed (too few 'changeme')"
+            echo "  - Template was modified incorrectly (wrong count)"
+            echo ""
+            echo "Please ensure application.properties uses the template format:"
+            echo "  spring.datasource.username=\${DATABASE_USERNAME:changeme}"
+            echo "  spring.datasource.password=\${DATABASE_PASSWORD:changeme}"
             exit 1
           fi
-          echo "✅ application.properties validation passed"
+
+          echo "✅ application.properties validation passed (2 'changeme' placeholders found)"
 
       - name: Make Maven wrapper executable
         working-directory: ./backend
