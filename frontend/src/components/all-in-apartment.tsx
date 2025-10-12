@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useDataRefresh } from '@/contexts/DataContext';
 
 interface ApartmentDetails {
-  unit: any;
-   onUnsavedChange?: (hasChanges: boolean) => void;
+     unit: any;
+     onUnsavedChange?: (hasChanges: boolean) => void;
 }
 
 export function ApartmentDetails({ unit, onUnsavedChange }: ApartmentDetails) {

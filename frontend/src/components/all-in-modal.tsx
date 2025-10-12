@@ -32,7 +32,7 @@ export function AllInModal({ open, selectedTab, onClose, tenant, onUpdateTenant 
 				return (
 				<SubTenantDetails
 					subtenants={tenant.subTenants || []}
-					maxOccupants={tenant.unit?.max_num || 1}
+					maxOccupants={tenant.unit?.num_occupants}
 					onUnsavedChange={setHasUnsavedChanges}
 					noTenant={tenant.firstName == null}
 				/>

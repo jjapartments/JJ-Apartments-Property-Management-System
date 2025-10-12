@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { InputField } from "@/components/ui/input";
 import { DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useDataRefresh } from '@/contexts/DataContext';
 
 interface Subtenant {
      id?: string;
@@ -31,9 +32,11 @@ export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, no
      const [formData, setFormData] = useState<Subtenant[]>([]);
      const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
      const [validationError, setValidationError] = useState<string | null>(null);
+     const [originalData, setOriginalData] = useState<Subtenant[]>([]);
 
      useEffect(() => {
           setFormData(subtenants);
+          setOriginalData(subtenants)
      }, [subtenants]);
 
      useEffect(() => {
@@ -78,7 +81,8 @@ export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, no
           return [...new Set(errors)];
      };
 
-     const handleSubmit = () => {
+     const { triggerRefresh } = useDataRefresh();
+     const handleSubmit = async () => {
           const errors = validateForm();
           if (errors.length > 0) {
                setValidationError(errors.join(" "));
@@ -86,11 +90,91 @@ export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, no
           }
           setValidationError(null);
 
-          console.log("Updated Subtenants:", formData);
-          setIsEditing(false);
-          setHasUnsavedChanges(false);
+          const originalIds = new Set(subtenants.map(st => st.id));
+          const currentIds = new Set(formData.filter(st => st.id).map(st => st.id));
 
-          // [TODO]: api call
+          const added = formData.filter(st => !st.id);
+          const updated = formData.filter(st => st.id && JSON.stringify(st) !== JSON.stringify(subtenants.find(o => o.id === st.id)));
+          const removed = subtenants.filter(st => !currentIds.has(st.id));
+
+          console.log("Added:", added);
+          console.log("Updated:", updated);
+          console.log("Removed:", removed);
+
+          // Check if there are any real changes
+          const hasAdded = formData.some(st => !st.id);
+          const hasRemoved = subtenants.length !== formData.length;
+          const hasUpdated = formData.some(st => {
+          const original = subtenants.find(o => o.id === st.id);
+               return original && JSON.stringify(st) !== JSON.stringify(original);
+          });
+
+          if (!hasAdded && !hasUpdated && !hasRemoved) {
+               setValidationError("No changes made.");
+               return;
+          }
+
+          try {
+               const requests: Promise<void>[] = [];
+
+               // Add new subtenants
+               for (const sub of added) {
+                    requests.push(
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants/add`, {
+                         method: "POST",
+                         headers: { "Content-Type": "application/json" },
+                         body: JSON.stringify(sub),
+                    }).then(async res => {
+                         if (!res.ok) {
+                         const err = await res.json().catch(() => ({}));
+                         throw new Error(err?.error || `Failed to add subtenant ${sub.firstName || ""}`);
+                         }
+                    })
+                    );
+               }
+
+               // Update existing subtenants
+               for (const sub of updated) {
+                    requests.push(
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants/update/${sub.id}`, {
+                         method: "PATCH",
+                         headers: { "Content-Type": "application/json" },
+                         body: JSON.stringify(sub),
+                    }).then(async res => {
+                         if (!res.ok) {
+                         const err = await res.json().catch(() => ({}));
+                         throw new Error(err?.error || `Failed to update subtenant ${sub.firstName || sub.id}`);
+                         }
+                    })
+                    );
+               }
+
+               // Delete removed subtenants
+               for (const sub of removed) {
+                    requests.push(
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants/${sub.id}`, {
+                         method: "DELETE",
+                    }).then(async res => {
+                         if (!res.ok) {
+                         const text = await res.text();
+                         throw new Error(text || `Failed to delete subtenant ${sub.firstName || sub.id}`);
+                         }
+                    })
+                    );
+               }
+
+               await Promise.all(requests);
+
+               console.log("✅ Subtenants synced successfully.");
+               setValidationError(null);
+               setIsEditing(false);
+               setHasUnsavedChanges(false);
+
+               triggerRefresh?.();
+          } catch (error: any) {
+               console.error("❌ Error updating subtenants:", error);
+               setValidationError(error.message || "Failed to update one or more subtenants.");
+          }
      };
 
      const handleChange = (index: number, field: string, value: string) => {
@@ -127,8 +211,6 @@ export function SubTenantDetails({ subtenants, maxOccupants, onUnsavedChange, no
           } else {
                canAdd = false
           }
-
-          console.log(totalOcc, canAdd, noTenant, maxOccupants)
 
           return (
                <div className="flex flex-col items-center justify-center h-full space-y-4">
