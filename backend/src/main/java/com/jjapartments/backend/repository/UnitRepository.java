@@ -58,7 +58,7 @@ public class UnitRepository {
         if (unitExists(unit)) {
             throw new ErrorException("The unit already exists.");
         } else {
-            String sql = "INSERT INTO units(unit_number, name, description, price, num_occupants) VALUES (?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO units(unit_number, name, description, price, num_occupants,active_tenant_id) VALUES (?, ?, ?, ?, ?, ?)";
             jdbcTemplate.update(sql, unit.getUnitNumber(), unit.getName(), unit.getDescription(), unit.getPrice(),
                     unit.getNumOccupants());
 
@@ -89,7 +89,9 @@ public class UnitRepository {
                     unit.getName(),
                     unit.getDescription(),
                     unit.getPrice(),
-                    unit.getNumOccupants());
+                    unit.getNumOccupants(),
+                    unit.getActiveTenantId() > 0 ? unit.getActiveTenantId() : null 
+            );    
         }
     }
 
