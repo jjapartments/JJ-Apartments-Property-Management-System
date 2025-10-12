@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
 import { ErrorModal } from "./error-modal";
 
@@ -14,6 +14,18 @@ export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, uni
 
     const [errorModalOpen, setErrorModalOpen] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+
+    // Filter units to only show those without active tenants, unless editing
+    const availableUnits = useMemo(() => {
+        return units.filter(unit => {
+            // If editing, include the current tenant's unit
+            if (isEditing && editingTenant?.unit?.id === unit.id) {
+                return true;
+            }
+            // Otherwise, only show units without active tenants
+            return !unit.activeTenantId || unit.activeTenantId === null;
+        });
+    }, [units, isEditing, editingTenant]);
 
     // Populate form with editing data when editing
     useEffect(() => {
@@ -195,11 +207,17 @@ export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, uni
                                 <SelectValue placeholder="Select Unit" />
                             </SelectTrigger>
                             <SelectContent className="w-full">
-                                {units.map((u) => (
-                                    <SelectItem key={u.id} value={String(u.id)}>
-                                        Unit {u.unitNumber} - {u.name}
-                                    </SelectItem>
-                                ))}
+                                {availableUnits.length === 0 ? (
+                                    <div className="px-4 py-3 text-sm text-gray-500">
+                                        No available units
+                                    </div>
+                                ) : (
+                                    availableUnits.map((u) => (
+                                        <SelectItem key={u.id} value={String(u.id)}>
+                                            Unit {u.unitNumber} - {u.name}
+                                        </SelectItem>
+                                    ))
+                                )}
                             </SelectContent>
                         </Select>
                     </div>
