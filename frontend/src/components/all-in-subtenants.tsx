@@ -74,9 +74,6 @@ export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTe
 
                if (!/^(09|\+639)\d{9}$/.test(sub.phoneNumber))
                     errors.push(`Invalid phone number.`);
-
-               if (sub.link && !/^https?:\/\/(www\.)?(facebook|m\.me)\.com/.test(sub.link))
-                    errors.push(`Invalid Messenger/Facebook link.`);
           });
 
           return [...new Set(errors)];
@@ -181,10 +178,10 @@ export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTe
                setIsEditing(false);
                setHasUnsavedChanges(false);
                isCurrEditing?.(false);
-               triggerRefresh?.();
                if (onSubmit) {
-                    onSubmit(null)
+                    await onSubmit(null); 
                }
+               triggerRefresh?.(); 
           } catch (error: any) {
                console.error("❌ Error updating subtenants:", error);
                setValidationError(error.message || "Failed to update one or more subtenants.");

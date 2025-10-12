@@ -131,8 +131,6 @@ CREATE TABLE IF NOT EXISTS `jj_apartments`.`sub_tenants` (
   `main_tenant_id` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `main_tenant_id_idx` (`main_tenant_id` ASC) VISIBLE,
-  UNIQUE INDEX `phone_number_UNIQUE` (`phone_number` ASC) VISIBLE,
-  UNIQUE INDEX `messenger_link_UNIQUE` (`messenger_link` ASC) VISIBLE,
   CONSTRAINT `main_tenant_id`
     FOREIGN KEY (`main_tenant_id`)
     REFERENCES `jj_apartments`.`tenants` (`id`)
