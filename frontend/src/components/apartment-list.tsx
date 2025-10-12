@@ -18,7 +18,7 @@ export type Unit = {
 
 type SubTenant = {
   firstName: string,
-  middleName?: string;
+  middleInitial?: string;
   lastName: string;
   link: string;
   phoneNumber: string;
@@ -27,7 +27,7 @@ type SubTenant = {
 type Tenant = {
   id?: number | null;
   firstName?: string | null;
-  middleName?: string | null;
+  middleInitial?: string | null;
   lastName?: string | null;
   email?: string | null;
   unit: string;
@@ -205,7 +205,7 @@ export function ApartmentList() {
                 return {
                   id: tenant.id,
                   firstName: tenant.firstName,
-                  middleName: tenant.middleInitial || tenant.middleName,
+                  middleInitial: tenant.middleInitial || tenant.middleInitial,
                   lastName: tenant.lastName,
                   email: tenant.email,
                   phoneNumber: tenant.phoneNumber,
@@ -217,7 +217,7 @@ export function ApartmentList() {
                   return {
                     id: null,
                     firstName: null,
-                    middleName: null,
+                    middleInitial: null,
                     lastName: null,
                     email: null,
                     phoneNumber: null,
@@ -276,7 +276,7 @@ export function ApartmentList() {
             return {
               id: tenant.id,
               firstName: tenant.firstName,
-              middleName: tenant.middleInitial || tenant.middleName,
+              middleInitial: tenant.middleInitial || tenant.middleInitial,
               lastName: tenant.lastName,
               email: tenant.email,
               phoneNumber: tenant.phoneNumber,
@@ -288,7 +288,7 @@ export function ApartmentList() {
             return {
               id: null,
               firstName: null,
-              middleName: null,
+              middleInitial: null,
               lastName: null,
               email: null,
               phoneNumber: null,

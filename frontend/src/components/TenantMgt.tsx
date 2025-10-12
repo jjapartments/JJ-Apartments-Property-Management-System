@@ -5,7 +5,7 @@ import { ErrorModal } from "./error-modal";
 export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, units }) {
     const [formData, setFormData] = useState({
         firstName: '',
-        middleName: '',
+        middleInitial: '',
         lastName: '',
         email: '',
         phoneNumber: '',
@@ -28,7 +28,7 @@ export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, uni
 
             setFormData({
                 firstName: editingTenant.firstName || '',
-                middleName: editingTenant.middleName || '',
+                middleInitial: editingTenant.middleInitial || '',
                 lastName: editingTenant.lastName || '',
                 email: editingTenant.email || '',
                 phoneNumber: editingTenant.phoneNumber || '',
@@ -38,7 +38,7 @@ export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, uni
             // Reset form when not editing
             setFormData({
                 firstName: '',
-                middleName: '',
+                middleInitial: '',
                 lastName: '',
                 email: '',
                 phoneNumber: '',
@@ -55,7 +55,7 @@ export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, uni
     const handleMiddleInitialChange = (e) => {
         let value = e.target.value.toUpperCase(); // uppercase
         if (value.length > 1) value = value.charAt(0); // keep only first letter
-        setFormData({ ...formData, middleName: value });
+        setFormData({ ...formData, middleInitial: value });
     };
     
     const handleSubmit = () => {
@@ -126,8 +126,8 @@ export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, uni
                         </label>
                         <input
                             type="text"
-                            name="middleName"
-                            value={formData.middleName}
+                            name="middleInitial"
+                            value={formData.middleInitial}
                             onChange={handleMiddleInitialChange}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             placeholder="e.g., A"

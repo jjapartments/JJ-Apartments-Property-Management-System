@@ -24,7 +24,7 @@ export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetails
 
      const [formData, setFormData] = useState({
           firstName: tenant.firstName || "",
-          middleName: tenant.middleName || "",
+          middleInitial: tenant.middleInitial || "",
           lastName: tenant.lastName || "",
           email: tenant.email || "",
           phoneNumber: tenant.phoneNumber || "",
@@ -33,7 +33,7 @@ export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetails
 
      const hasUnsavedChanges = JSON.stringify(formData) !== JSON.stringify({
           firstName: tenant.firstName || "",
-          middleName: tenant.middleName || "",
+          middleInitial: tenant.middleInitial || "",
           lastName: tenant.lastName || "",
           email: tenant.email || "",
           phoneNumber: tenant.phoneNumber || "",
@@ -44,7 +44,7 @@ export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetails
           if (tenant) {
                setFormData({
                     firstName: tenant.firstName || "",
-                    middleName: tenant.middleName || "",
+                    middleInitial: tenant.middleInitial || "",
                     lastName: tenant.lastName || "",
                     email: tenant.email || "",
                     phoneNumber: tenant.phoneNumber || "",
@@ -60,7 +60,7 @@ export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetails
 
           setFormData({
                firstName: tenant.firstName || "",
-               middleName: tenant.middleName || "",
+               middleInitial: tenant.middleInitial || "",
                lastName: tenant.lastName || "",
                email: tenant.email || "",
                phoneNumber: tenant.phoneNumber || "",
@@ -74,7 +74,7 @@ export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetails
           // Check if same
           const isSame =
                formData.firstName === (tenant.firstName || "") &&
-               formData.middleName === (tenant.middleName || "") &&
+               formData.middleInitial === (tenant.middleInitial || "") &&
                formData.lastName === (tenant.lastName || "") &&
                formData.email === (tenant.email || "") &&
                formData.phoneNumber === (tenant.phoneNumber || "") &&
@@ -91,8 +91,8 @@ export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetails
           if (!formData.lastName.trim()) 
                newErrors.lastName = "Last name is required.";
 
-          if (formData.middleName && formData.middleName.length > 1)
-               newErrors.middleName = "Middle initial must be one letter only.";
+          if (formData.middleInitial && formData.middleInitial.length > 1)
+               newErrors.middleInitial = "Middle initial must be one letter only.";
 
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!formData.email.trim()) 
@@ -121,7 +121,7 @@ export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetails
 
           const payload = {
                firstName: formData.firstName,
-               middleName: formData.middleName,
+               middleInitial: formData.middleInitial,
                lastName: formData.lastName,
                email: formData.email,
                phoneNumber: formData.phoneNumber,
@@ -184,9 +184,9 @@ export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetails
                     <InputField
                          isEditing={isEditing}
                          label="Middle Initial"
-                         value={formData.middleName || ""}
-                         placeholder="e.g., Santos"
-                         onChange={(e) => handleChange("middleName", e.target.value)}
+                         value={formData.middleInitial || ""}
+                         placeholder="e.g., S"
+                         onChange={(e) => handleChange("middleInitial", e.target.value)}
                     />
                     <InputField
                          isEditing={isEditing}

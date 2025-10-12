@@ -11,7 +11,7 @@ import { DeleteModal } from "@/components/delete-modal";
 
 type SubTenant = {
     firstName: string,
-    middleName?: string;
+    middleInitial?: string;
     lastName: string;
     link: string;
     phoneNumber: string;
@@ -20,7 +20,7 @@ type SubTenant = {
 type Tenant = {
     id: number;
     firstName: string;
-    middleName?: string;
+    middleInitial?: string;
     lastName: string;
     email: string;
     unit: string;
@@ -111,7 +111,7 @@ export default function TenantsManagementPage() {
                 return {
                     ...t,
                     
-                    middleName: t.middleInitial, 
+                    middleInitial: t.middleInitial, 
                     unit: unitInfo ? unitInfo : {
                         id: t.unit,
                         name: 'Unknown Building',
@@ -194,7 +194,7 @@ export default function TenantsManagementPage() {
             
             const tenantDataPayload = {
                 firstName: formData.firstName,
-                middleInitial: formData.middleName || null, 
+                middleInitial: formData.middleInitial || null, 
                 lastName: formData.lastName,
                 email: formData.email,
                 phoneNumber: formData.phoneNumber,
@@ -277,7 +277,7 @@ export default function TenantsManagementPage() {
 
         const tenantUpdatePayload = {
             firstName: updatedData.firstName,
-            middleInitial: updatedData.middleName || null,
+            middleInitial: updatedData.middleInitial || null,
             lastName: updatedData.lastName,
             email: updatedData.email,
             phoneNumber: updatedData.phoneNumber,
@@ -371,8 +371,8 @@ export default function TenantsManagementPage() {
         return phone;
     };
 
-    const formatName = (firstName: string, lastName: string, middleName?: string) => {
-        const middle = middleName ? ` ${middleName}.` : '';
+    const formatName = (firstName: string, lastName: string, middleInitial?: string) => {
+        const middle = middleInitial ? ` ${middleInitial}.` : '';
         return `${firstName}${middle} ${lastName}`;
     };
 
@@ -450,7 +450,7 @@ export default function TenantsManagementPage() {
                     ) : (
                         <div className="divide-y divide-gray-100">
                             {tenants.filter((tenant) =>
-                                        `${tenant.firstName} ${tenant.middleName || ""} ${tenant.lastName}`
+                                        `${tenant.firstName} ${tenant.middleInitial || ""} ${tenant.lastName}`
                                         .toLowerCase()
                                         .includes(searchQuery.toLowerCase())
                                     )
@@ -466,7 +466,7 @@ export default function TenantsManagementPage() {
                                                 </div>
                                                 <div className="flex-1">
                                                     <h3 className="font-semibold text-gray-900 text-lg group-hover:text-blue-900 transition-colors">
-                                                        {formatName(tenant.firstName, tenant.lastName, tenant.middleName)}
+                                                        {formatName(tenant.firstName, tenant.lastName, tenant.middleInitial)}
                                                     </h3>
                                                     <div className="flex items-center space-x-2 mt-1">
                                                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
@@ -558,7 +558,7 @@ export default function TenantsManagementPage() {
             <DeleteModal
                 open={deleteModalOpen}
                 title="Delete Tenant"
-                message={`Are you sure you want to delete ${tenantToDelete ? formatName(tenantToDelete.firstName, tenantToDelete.lastName, tenantToDelete.middleName) : 'this tenant'}?`}
+                message={`Are you sure you want to delete ${tenantToDelete ? formatName(tenantToDelete.firstName, tenantToDelete.lastName, tenantToDelete.middleInitial) : 'this tenant'}?`}
                 onCancel={cancelDelete}
                 onConfirm={confirmDeleteTenant}
             />
