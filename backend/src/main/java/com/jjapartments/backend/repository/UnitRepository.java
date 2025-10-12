@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.annotation.Transactional;
+ork.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
 
 import com.jjapartments.backend.models.Unit;
@@ -29,7 +29,6 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        t.phone_number AS contact_number,
                         (CASE 
                             WHEN u.active_tenant_id IS NULL THEN 0
                             ELSE (
@@ -66,7 +65,7 @@ public class UnitRepository {
         if (unitExists(unit)) {
             throw new ErrorException("The unit already exists.");
         } else {
-            String sql = "INSERT INTO units(unit_number, name, description, price, num_occupants) VALUES (?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO units(unit_number, name, description, price, num_occupants,active_tenant_id) VALUES (?, ?, ?, ?, ?, ?)";
             jdbcTemplate.update(sql, unit.getUnitNumber(), unit.getName(), unit.getDescription(), unit.getPrice(),
                     unit.getNumOccupants());
 
@@ -78,7 +77,6 @@ public class UnitRepository {
                             u.description,
                             u.price,
                             u.num_occupants,
-                            t.phone_number AS contact_number,
                             (CASE 
                                 WHEN u.active_tenant_id IS NULL THEN 0
                                 ELSE (
@@ -106,7 +104,9 @@ public class UnitRepository {
                     unit.getName(),
                     unit.getDescription(),
                     unit.getPrice(),
-                    unit.getNumOccupants());
+                    unit.getNumOccupants(),
+                    unit.getActiveTenantId() > 0 ? unit.getActiveTenantId() : null 
+            );    
         }
     }
 
@@ -124,7 +124,6 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        t.phone_number AS contact_number,
                     (CASE 
                         WHEN u.active_tenant_id IS NULL THEN 0
                         ELSE (
@@ -167,7 +166,6 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        t.phone_number AS contact_number,
                         (CASE 
                             WHEN u.active_tenant_id IS NULL THEN 0
                             ELSE (
@@ -198,7 +196,6 @@ public class UnitRepository {
                         u.description,
                         u.price,
                         u.num_occupants,
-                        t.phone_number AS contact_number,
                         (CASE 
                             WHEN u.active_tenant_id IS NULL THEN 0
                             ELSE (
