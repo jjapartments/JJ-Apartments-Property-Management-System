@@ -14,7 +14,7 @@ interface TenantDetailsProps {
 
 export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetailsProps) {
      const [errors, setErrors] = useState<Record<string, string>>({});
-     const { triggerRefresh } = useDataRefresh();
+     const { refreshTrigger, triggerRefresh } = useDataRefresh();
 
      const [isEditing, setIsEditing] = useState(false);
      const handleEdit = () => {
@@ -68,7 +68,7 @@ export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetails
           });
      };
 
-     const handleSubmit = () => {
+     const handleSubmit = async () => {
           const newErrors: Record<string, string> = {};
 
           // Check if same
@@ -121,24 +121,36 @@ export function TenantDetails({ tenant, isCurrEditing, onSubmit }: TenantDetails
 
           const payload = {
                firstName: formData.firstName,
-               middleInitial: formData.middleInitial,
+               middleInitial: formData.middleInitial || null,
                lastName: formData.lastName,
                email: formData.email,
                phoneNumber: formData.phoneNumber,
                messengerLink: formData.messengerLink,
-               unitId: tenant.unitId,
+               unitId: tenant.unit.id,
           };
-          console.log("Submitted values:", payload);
 
           try {
-               if (onSubmit) {
-                    onSubmit(payload);
+               const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/tenants/update/${tenant.id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+               });
+
+               if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err?.error || "Failed to update unit record.");
                }
+
+               console.log("Unit updated successfully");
+
+               /*if (onSubmit) {
+                    onSubmit(payload);
+               }*/
                setIsEditing(false);
                isCurrEditing?.(false);
                setErrors({});
 
-               triggerRefresh()
+               triggerRefresh?.()
           } catch (err: any) {
                const message = err?.message || "Failed to update tenant.";
                setErrors({ submit: message })

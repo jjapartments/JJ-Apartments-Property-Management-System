@@ -18,14 +18,14 @@ type SubTenant = {
 }
 
 type Tenant = {
-    id: number;
-    firstName: string;
-    middleInitial?: string;
-    lastName: string;
-    email: string;
+    id?: number | null;
+    firstName?: string | null;
+    middleInitial?: string | null;
+    lastName?: string | null;
+    email?: string | null;
     unit: string;
-    phoneNumber: string;
-    dateAdded: string;
+    phoneNumber?: string | null;
+    dateAdded?: string | null;
 
     subTenants: SubTenant[];
 };
@@ -45,7 +45,7 @@ type TenantWithUnitDetails = Omit<Tenant, 'unit'> & {
 
 export default function TenantsManagementPage() {
     const { isLoggedIn, isLoading } = useAuth();
-    const { triggerRefresh } = useDataRefresh();
+    const { refreshTrigger, triggerRefresh } = useDataRefresh();
     const router = useRouter();
     const [modalOpen, setModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState<TenantWithUnitDetails | null>(null);
@@ -63,6 +63,7 @@ export default function TenantsManagementPage() {
     // View
     const [selectedTenant, setSelectedTenant] = useState<TenantWithUnitDetails | null>(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [fullTenantData, setFullTenantData] = useState<TenantWithUnitDetails[] | null>(null);
 
     // useEffect(() => {
     //     if (!isLoading && !isLoggedIn) {
@@ -192,14 +193,6 @@ export default function TenantsManagementPage() {
 
     const handleAddTenant = async (formData) => {
         try {
-            // const unitId = await getUnit_id(formData.unitName, formData.unitNum);
-            // if (unitId === null || unitId === undefined) {
-            //     console.error('Error: Could not retrieve unit ID for the given unit name and number.');
-            //     setErrorMessage('Failed to add tenant: Unit not found or invalid unit details provided.');
-            //     setErrorModalOpen(true);
-            //     return; 
-            // }
-            
             const tenantDataPayload = {
                 firstName: formData.firstName,
                 middleInitial: formData.middleInitial || null, 
@@ -371,13 +364,12 @@ export default function TenantsManagementPage() {
         setTenantToDelete(null);
     };
 
-
-    const formatPhoneNumber = (phone: string) => {
+    const formatPhoneNumber = (phone?: string) => {
         if (!phone) return 'N/A';
         return phone;
     };
 
-    const formatName = (firstName: string, lastName: string, middleInitial?: string) => {
+    const formatName = (firstName?: string, lastName?: string, middleInitial?: string) => {
         const middle = middleInitial ? ` ${middleInitial}.` : '';
         return `${firstName}${middle} ${lastName}`;
     };
@@ -390,7 +382,78 @@ export default function TenantsManagementPage() {
         };
     };
 
+    useEffect(() => {
+        console.log("triggered 1")
+        if (refreshTrigger > 0) {
+            console.log("Refreshing Apartment List...");
+            console.log("triggered 2")
+            fetchUnitsAndTenants();
+        }
+    }, [refreshTrigger]);
     
+    useEffect(() => {
+          if (selectedTenant && fullTenantData) {
+            const updated = fullTenantData.find(
+              ftd => ftd.unit.id === selectedTenant.unit.id
+            );
+    
+            if (updated) setSelectedTenant(updated);
+          }
+        }, [units, fullTenantData]);
+
+    const fetchUnitsAndTenants = async () => {
+        try {
+            //setLoading(true);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units`);
+            if (!res.ok) throw new Error("Error fetching units");
+            const unitData = await res.json();
+    
+            const tenantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants`);
+            if (!tenantRes.ok) throw new Error("Error fetching tenants");
+            const tenantData = await tenantRes.json();
+    
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants`);
+            const subtenants = await response.json();
+    
+            const processed: TenantWithUnitDetails[] = unitData.map((u: Unit) => {
+              const tenant = tenantData.find((t: any) => Number(t.unitId) === u.id);
+              const tenantSubs = subtenants.filter((s: any) => s.mainTenantId === tenant?.id);
+    
+              if (tenant) {
+                return {
+                  id: tenant.id,
+                  firstName: tenant.firstName,
+                  middleInitial: tenant.middleInitial || tenant.middleInitial,
+                  lastName: tenant.lastName,
+                  email: tenant.email,
+                  phoneNumber: tenant.phoneNumber,
+                  dateAdded: tenant.dateAdded,
+                  subTenants: tenantSubs,
+                  unit: u,
+                };
+              } else {
+                return {
+                  id: null,
+                  firstName: null,
+                  middleInitial: null,
+                  lastName: null,
+                  email: null,
+                  phoneNumber: null,
+                  dateAdded: null,
+                  subTenants: [],
+                  unit: u,
+                } as TenantWithUnitDetails;
+              }
+            });
+    
+            setFullTenantData(processed);
+            setUnits(unitData);
+        } catch (err: any) {
+            setErrorMessage(err.message || "Error fetching data");
+        } finally {
+            //setLoading(false);
+        }
+    };
 
     // Note: We'll use the getUnitInfo function directly in the JSX
 
@@ -467,12 +530,12 @@ export default function TenantsManagementPage() {
                                             <div className="flex items-center space-x-4">
                                                 <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center shadow-md">
                                                     <span className="text-yellow-300 font-semibold text-lg">
-                                                        {tenant.firstName.charAt(0)}{tenant.lastName.charAt(0)}
+                                                        {tenant.firstName?.charAt(0)}{tenant.lastName?.charAt(0)}
                                                     </span>
                                                 </div>
                                                 <div className="flex-1">
                                                     <h3 className="font-semibold text-gray-900 text-lg group-hover:text-blue-900 transition-colors">
-                                                        {formatName(tenant.firstName, tenant.lastName, tenant.middleInitial)}
+                                                        {formatName(tenant.firstName || "", tenant.lastName || "", tenant.middleInitial || "")}
                                                     </h3>
                                                     <div className="flex items-center space-x-2 mt-1">
                                                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
@@ -487,13 +550,13 @@ export default function TenantsManagementPage() {
                                                     <div className="flex items-center space-x-2 mb-2 md:mb-0">
                                                         <Mail className="w-4 h-4 text-gray-400" />
                                                         <span className="font-medium text-gray-700">Email:</span>
-                                                        <span className="text-gray-600">{tenant.email}</span>
+                                                        <span className="text-gray-600">{tenant.email || ""}</span>
                                                     </div>
                                                     
                                                     <div className="flex items-center space-x-2 mb-2 md:mb-0">
                                                         <Phone className="w-4 h-4 text-gray-400" />
                                                         <span className="font-medium text-gray-700">Phone:</span>
-                                                        <span className="text-gray-600">{formatPhoneNumber(tenant.phoneNumber)}</span>
+                                                        <span className="text-gray-600">{formatPhoneNumber(tenant.phoneNumber || "")}</span>
                                                     </div>
                                                 </div>
                                                 
@@ -564,7 +627,7 @@ export default function TenantsManagementPage() {
             <DeleteModal
                 open={deleteModalOpen}
                 title="Delete Tenant"
-                message={`Are you sure you want to delete ${tenantToDelete ? formatName(tenantToDelete.firstName, tenantToDelete.lastName, tenantToDelete.middleInitial) : 'this tenant'}?`}
+                message={`Are you sure you want to delete ${tenantToDelete ? formatName(tenantToDelete.firstName || "", tenantToDelete.lastName || "", tenantToDelete.middleInitial || "") : 'this tenant'}?`}
                 onCancel={cancelDelete}
                 onConfirm={confirmDeleteTenant}
             />
