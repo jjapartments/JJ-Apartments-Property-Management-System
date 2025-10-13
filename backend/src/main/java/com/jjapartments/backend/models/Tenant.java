@@ -8,11 +8,11 @@ public class Tenant {
     private String middleInitial;
     private String email;
     private String phoneNumber;
+    private String messengerLink;
     private int unitId;
     private String moveInDate;
     private String moveOutDate;
 
-       
     public int getId() {
         return id;
     }
@@ -59,6 +59,14 @@ public class Tenant {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public String getMessengerLink() {
+        return messengerLink;
+    }
+
+    public void setMessengerLink(String messengerLink) {
+        this.messengerLink = messengerLink;
     }
 
     public int getUnitId() {

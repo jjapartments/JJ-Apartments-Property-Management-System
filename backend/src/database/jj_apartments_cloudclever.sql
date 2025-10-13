@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS `tenants` (
   `middle_initial` VARCHAR(1) NULL DEFAULT NULL,
   `email` VARCHAR(45) NOT NULL,
   `phone_number` VARCHAR(15) NOT NULL,
+  `messenger_link` VARCHAR(512) NULL,
   `units_id` INT NOT NULL,
   `move_in_date` DATE NULL,
   `move_out_date` DATE NULL,
@@ -76,18 +77,18 @@ CREATE TABLE IF NOT EXISTS `tenants` (
 ) ENGINE = InnoDB;
 
 INSERT INTO `tenants` 
-(`last_name`, `first_name`, `middle_initial`, `email`, `phone_number`, `units_id`) 
+(`last_name`, `first_name`, `middle_initial`, `email`, `phone_number`, `messenger_link`, `units_id`) 
 VALUES
-('Dela Cruz', 'Juan', 'R', 'juan.delacruz@example.com', '09171234567', 1),
-('Santos', 'Maria', 'L', 'maria.santos@example.com', '09181234567', 3),
-('Reyes', 'Carlos', 'T', 'carlos.reyes@example.com', '09192234567', 5),
-('Cruz', 'Angela', 'M', 'angela.cruz@example.com', '09201234567', 7),
-('Gomez', 'Joseph', 'P', 'joseph.gomez@example.com', '09211234567', 9),
-('Torres', 'Anna', 'S', 'anna.torres@example.com', '09221234567', 11),
-('Lopez', 'Daniel', 'V', 'daniel.lopez@example.com', '09231234567', 13),
-('Garcia', 'Leah', 'C', 'leah.garcia@example.com', '09241234567', 15),
-('Navarro', 'Miguel', 'D', 'miguel.navarro@example.com', '09251234567', 17),
-('Ramos', 'Patricia', 'E', 'patricia.ramos@example.com', '09261234567', 19);
+('Dela Cruz', 'Juan', 'R', 'juan.delacruz@example.com', '09171234567', 'https://m.me/juan.delacruz', 1),
+('Santos', 'Maria', 'L', 'maria.santos@example.com', '09181234567', 'https://facebook.com/maria.santos', 3),
+('Reyes', 'Carlos', 'T', 'carlos.reyes@example.com', '09192234567', 'https://m.me/carlos.reyes', 5),
+('Cruz', 'Angela', 'M', 'angela.cruz@example.com', '09201234567', 'https://facebook.com/angela.cruz', 7),
+('Gomez', 'Joseph', 'P', 'joseph.gomez@example.com', '09211234567', 'https://m.me/joseph.gomez', 9),
+('Torres', 'Anna', 'S', 'anna.torres@example.com', '09221234567', 'https://facebook.com/anna.torres', 11),
+('Lopez', 'Daniel', 'V', 'daniel.lopez@example.com', '09231234567', 'https://m.me/daniel.lopez', 13),
+('Garcia', 'Leah', 'C', 'leah.garcia@example.com', '09241234567', 'https://facebook.com/leah.garcia', 15),
+('Navarro', 'Miguel', 'D', 'miguel.navarro@example.com', '09251234567', 'https://m.me/miguel.navarro', 17),
+('Ramos', 'Patricia', 'E', 'patricia.ramos@example.com', '09261234567', 'https://facebook.com/patricia.ramos', 19);
 
 -- Foreign key constraint to units table
 ALTER TABLE `units`
@@ -126,14 +127,21 @@ CREATE TABLE IF NOT EXISTS `sub_tenants` (
   `main_tenant_id` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `main_tenant_id_idx` (`main_tenant_id` ASC) VISIBLE,
-  UNIQUE INDEX `phone_number_UNIQUE` (`phone_number` ASC) VISIBLE,
-  UNIQUE INDEX `messenger_link_UNIQUE` (`messenger_link` ASC) VISIBLE,
   CONSTRAINT `main_tenant_id`
     FOREIGN KEY (`main_tenant_id`)
     REFERENCES `tenants` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
 ENGINE = InnoDB;
+
+INSERT INTO `sub_tenants` 
+(`last_name`, `first_name`, `middle_initial`, `phone_number`, `messenger_link`, `main_tenant_id`) 
+VALUES
+('Santos', 'Jose', 'M', '09271234567', 'https://m.me/jose.santos', 2),
+('Santos', 'Isabel', 'R', '09281234567', 'https://facebook.com/isabel.santos', 2),
+('Reyes', 'Sofia', 'L', '09291234567', 'https://m.me/sofia.reyes', 3),
+('Torres', 'Rafael', 'D', '09301234567', 'https://facebook.com/rafael.torres', 6),
+('Torres', 'Carmen', 'V', '09311234567', 'https://m.me/carmen.torres', 6);
 
 -- -------------------------
 -- Table: payments
