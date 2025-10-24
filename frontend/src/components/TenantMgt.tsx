@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
 import { ErrorModal } from "./error-modal";
 
 export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, units }) {
     const [formData, setFormData] = useState({
         firstName: '',
-        middleName: '',
+        middleInitial: '',
         lastName: '',
         email: '',
         phoneNumber: '',
@@ -14,6 +14,18 @@ export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, uni
 
     const [errorModalOpen, setErrorModalOpen] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+
+    // Filter units to only show those without active tenants, unless editing
+    const availableUnits = useMemo(() => {
+        return units.filter(unit => {
+            // If editing, include the current tenant's unit
+            if (isEditing && editingTenant?.unit?.id === unit.id) {
+                return true;
+            }
+            // Otherwise, only show units without active tenants
+            return !unit.activeTenantId || unit.activeTenantId === null;
+        });
+    }, [units, isEditing, editingTenant]);
 
     // Populate form with editing data when editing
     useEffect(() => {
@@ -28,7 +40,7 @@ export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, uni
 
             setFormData({
                 firstName: editingTenant.firstName || '',
-                middleName: editingTenant.middleName || '',
+                middleInitial: editingTenant.middleInitial || '',
                 lastName: editingTenant.lastName || '',
                 email: editingTenant.email || '',
                 phoneNumber: editingTenant.phoneNumber || '',
@@ -38,7 +50,7 @@ export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, uni
             // Reset form when not editing
             setFormData({
                 firstName: '',
-                middleName: '',
+                middleInitial: '',
                 lastName: '',
                 email: '',
                 phoneNumber: '',
@@ -55,7 +67,7 @@ export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, uni
     const handleMiddleInitialChange = (e) => {
         let value = e.target.value.toUpperCase(); // uppercase
         if (value.length > 1) value = value.charAt(0); // keep only first letter
-        setFormData({ ...formData, middleName: value });
+        setFormData({ ...formData, middleInitial: value });
     };
     
     const handleSubmit = () => {
@@ -126,8 +138,8 @@ export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, uni
                         </label>
                         <input
                             type="text"
-                            name="middleName"
-                            value={formData.middleName}
+                            name="middleInitial"
+                            value={formData.middleInitial}
                             onChange={handleMiddleInitialChange}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             placeholder="e.g., A"
@@ -195,11 +207,17 @@ export function TenantMgt({ toggleModal, onSubmit, editingTenant, isEditing, uni
                                 <SelectValue placeholder="Select Unit" />
                             </SelectTrigger>
                             <SelectContent className="w-full">
-                                {units.map((u) => (
-                                    <SelectItem key={u.id} value={String(u.id)}>
-                                        Unit {u.unitNumber} - {u.name}
-                                    </SelectItem>
-                                ))}
+                                {availableUnits.length === 0 ? (
+                                    <div className="px-4 py-3 text-sm text-gray-500">
+                                        No available units
+                                    </div>
+                                ) : (
+                                    availableUnits.map((u) => (
+                                        <SelectItem key={u.id} value={String(u.id)}>
+                                            Unit {u.unitNumber} - {u.name}
+                                        </SelectItem>
+                                    ))
+                                )}
                             </SelectContent>
                         </Select>
                     </div>

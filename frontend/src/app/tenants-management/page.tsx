@@ -5,33 +5,47 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDataRefresh } from '@/contexts/DataContext';
 import { TenantPopUp } from "@/components/TenantPopUp";
 import { TenantMgt } from "@/components/TenantMgt";
-import { Mail, Phone, Building, DoorClosed  } from "lucide-react";
+import { AllInModal } from "@/components/all-in-modal";
+import { Mail, Phone, Building, DoorClosed, Users } from "lucide-react";
 import { DeleteModal } from "@/components/delete-modal";
 
-type Tenant = {
-    id: number;
-    firstName: string;
-    middleName?: string;
+type SubTenant = {
+    firstName: string,
+    middleInitial?: string;
     lastName: string;
-    email: string;
-    unit: string;
+    link: string;
     phoneNumber: string;
-    dateAdded: string;
+}
 
+type Tenant = {
+    id?: number | null;
+    firstName?: string | null;
+    middleInitial?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    unit: string;
+    phoneNumber?: string | null;
+    dateAdded?: string | null;
+
+    subTenants: SubTenant[];
 };
 
 type Unit = {
     id: number;
     unitNumber: string;
     name: string;
+    description: string;
+    max_num: number;
+    price: number;
 };
+
 type TenantWithUnitDetails = Omit<Tenant, 'unit'> & {
     unit: Unit; 
 };
 
 export default function TenantsManagementPage() {
     const { isLoggedIn, isLoading } = useAuth();
-    const { triggerRefresh } = useDataRefresh();
+    const { refreshTrigger, triggerRefresh } = useDataRefresh();
     const router = useRouter();
     const [modalOpen, setModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState<TenantWithUnitDetails | null>(null);
@@ -46,6 +60,11 @@ export default function TenantsManagementPage() {
 
     const [units, setUnits] = useState<Unit[]>([]);
 
+    // View
+    const [selectedTenant, setSelectedTenant] = useState<TenantWithUnitDetails | null>(null);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [fullTenantData, setFullTenantData] = useState<TenantWithUnitDetails[] | null>(null);
+
     // useEffect(() => {
     //     if (!isLoading && !isLoggedIn) {
     //         router.replace('/login');
@@ -56,13 +75,12 @@ export default function TenantsManagementPage() {
     useEffect(() => {
         fetchUnits();
     }, []); 
-
-    
     useEffect(() => {
         if (units.length > 0) { 
             fetchTenants();
         }
     }, [units]);
+
     const fetchUnits = async () => {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units`);
@@ -78,32 +96,36 @@ export default function TenantsManagementPage() {
     };
     const fetchTenants = async () => {
         try {
-        const [unitsResponse, tenantsResponse] = await Promise.all([
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units`),
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants`)
-        ]);
+            const [unitsResponse, tenantsResponse] = await Promise.all([
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units`),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants`)
+            ]);
 
-        const units = await unitsResponse.json();
-        const tenants = await tenantsResponse.json();
-        
-        const processedTenants = tenants.map(t => {
+            const units = await unitsResponse.json();
+            const tenants = await tenantsResponse.json();
 
-            const unitInfo = units.find(u => u.id === t.unitId);
-            return {
-                ...t,
-                middleName: t.middleInitial, // Map middleInitial to middleName for frontend consistency
-                unit: unitInfo ? unitInfo : {
-                    id: t.unit,
-                    name: 'Unknown Building',
-                    unitNumber: 'Unknown Unit'
-                }
-            };
-        });
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants`);
+            const subtenants = await response.json();
 
-        setTenants(processedTenants);
-    } catch (err) {
-        console.error("Error fetching data", err);
-    }
+            const processedTenants = tenants.map(t => {
+                const unitInfo = units.find(u => u.id === t.unitId);
+                return {
+                    ...t,
+                    
+                    middleInitial: t.middleInitial, 
+                    unit: unitInfo ? unitInfo : {
+                        id: t.unit,
+                        name: 'Unknown Building',
+                        unitNumber: 'Unknown Unit'
+                    },
+                    subTenants: subtenants.filter(s => s.mainTenantId === t.id)
+                };
+            });
+
+            setTenants(processedTenants);
+        } catch (err) {
+            console.error("Error fetching data", err);
+        }
     };
 
     const toggleModal = () => {
@@ -114,6 +136,17 @@ export default function TenantsManagementPage() {
         }
     };
 
+    const handleAddTenantClick = () => {
+        setEditingTenant(null);  
+        setModalOpen(true);
+    };
+
+    const toggleViewModal = () => {
+        setIsViewModalOpen(!isViewModalOpen);
+        if (isViewModalOpen) {
+            setEditingTenant(null);  
+        }
+    };
 
     const getUnit_id = async (unitName, unitNumber) => {
         try {
@@ -160,17 +193,9 @@ export default function TenantsManagementPage() {
 
     const handleAddTenant = async (formData) => {
         try {
-            // const unitId = await getUnit_id(formData.unitName, formData.unitNum);
-            // if (unitId === null || unitId === undefined) {
-            //     console.error('Error: Could not retrieve unit ID for the given unit name and number.');
-            //     setErrorMessage('Failed to add tenant: Unit not found or invalid unit details provided.');
-            //     setErrorModalOpen(true);
-            //     return; 
-            // }
-            
             const tenantDataPayload = {
                 firstName: formData.firstName,
-                middleInitial: formData.middleName || null, 
+                middleInitial: formData.middleInitial || null, 
                 lastName: formData.lastName,
                 email: formData.email,
                 phoneNumber: formData.phoneNumber,
@@ -210,9 +235,9 @@ export default function TenantsManagementPage() {
             console.log("Tenant added successfully, triggering refresh...");
             toggleModal();
             console.log("About to call triggerRefresh()");
-            triggerRefresh(); // Trigger refresh in other components
+            await fetchTenants(); // Wait for data to refresh first
+            triggerRefresh(); // Then trigger refresh in other components
             console.log("triggerRefresh() called successfully");
-            fetchTenants();
         } catch (error) {
             console.error('Error adding tenant:', error);
             setErrorMessage('An unexpected error occurred while adding the tenant. Please try again.');
@@ -225,26 +250,35 @@ export default function TenantsManagementPage() {
         setModalOpen(true);
     };
 
+    const handleViewTenant = (tenant: TenantWithUnitDetails) => {
+        setEditingTenant(tenant)
+        setSelectedTenant(tenant);
+        setIsViewModalOpen(true);
+    };
+
+    const handleUpdates = async (updatedData: any) => {
+        console.log("triggered")
+        if (updatedData)
+            handleUpdateTenant(updatedData)
+
+        triggerRefresh(); 
+        console.log("triggerRefresh() called successfully");
+        fetchTenants(); 
+        setIsViewModalOpen(false);
+        setTimeout(() => {
+            setIsViewModalOpen(true);
+        }, 150);
+    }
+
     const handleUpdateTenant = async (updatedData: any) => {
         if (!editingTenant) {
             console.error('No tenant selected for update.');
             return;
         }
-        // let unitIdForUpdate = editingTenant.unit.id; 
-        // if (updatedData.unitName !== editingTenant.unit.name || updatedData.unitNum !== editingTenant.unit.unitNumber) {
-        //     console.log("Unit details in form changed. Attempting to find new unit ID...");
-        //     const newUnitId = await getUnit_id(updatedData.unitName, updatedData.unitNum);
-        //     if (newUnitId === null || newUnitId === undefined) {
-        //         console.error('Error: Could not retrieve new unit ID for the updated unit details. Please ensure the Unit Name and Unit No. are valid.');
-        //         alert('Failed to update tenant: New unit not found or invalid unit details. Please check the Unit Name and Unit No.');
-        //         return;
-        //     }
-        //     unitIdForUpdate = newUnitId;
-        // }
-        
+
         const tenantUpdatePayload = {
             firstName: updatedData.firstName,
-            middleInitial: updatedData.middleName || null,
+            middleInitial: updatedData.middleInitial || null,
             lastName: updatedData.lastName,
             email: updatedData.email,
             phoneNumber: updatedData.phoneNumber,
@@ -280,12 +314,17 @@ export default function TenantsManagementPage() {
                 return;
             }
             
-            console.log('Tenant updated successfully, triggering refresh...');
-            toggleModal(); 
             console.log("About to call triggerRefresh()");
-            triggerRefresh(); // Trigger refresh in other components
+            await fetchTenants(); // Wait for data to refresh first
+            triggerRefresh();
             console.log("triggerRefresh() called successfully");
-            fetchTenants(); 
+
+            if (selectedTenant) {
+                const updatedTenant = tenants.find(t => t.id === selectedTenant.id);
+                if (updatedTenant) {
+                    setSelectedTenant(updatedTenant);
+                }
+            }
         } catch (error) {
             console.error('Error updating tenant:', error);
             setErrorMessage('An unexpected error occurred while updating the tenant. Please try again.');
@@ -294,30 +333,30 @@ export default function TenantsManagementPage() {
     };
 
     const handleDeleteTenant = (tenant: TenantWithUnitDetails) => {
-    setTenantToDelete(tenant);
-    setDeleteModalOpen(true);
+        setTenantToDelete(tenant);
+        setDeleteModalOpen(true);
     };
 
     const confirmDeleteTenant = async () => {
-    if (!tenantToDelete) return;
+        if (!tenantToDelete) return;
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants/${tenantToDelete.id}`, {
-        method: 'DELETE',
-        headers: { "Content-Type": "application/json" },
-    });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants/${tenantToDelete.id}`, {
+            method: 'DELETE',
+            headers: { "Content-Type": "application/json" },
+        });
 
-    if (!res.ok) {
-        alert("Failed to delete tenant.");
-        return;
-    }
+        if (!res.ok) {
+            alert("Failed to delete tenant.");
+            return;
+        }
 
-    console.log("Tenant deleted successfully, triggering refresh...");
-    setDeleteModalOpen(false);
-    setTenantToDelete(null);
-    console.log("About to call triggerRefresh()");
-    triggerRefresh(); // Trigger refresh in other components
-    console.log("triggerRefresh() called successfully");
-    fetchTenants();
+        console.log("Tenant deleted successfully, triggering refresh...");
+        setDeleteModalOpen(false);
+        setTenantToDelete(null);
+        console.log("About to call triggerRefresh()");
+        await fetchTenants(); // Wait for data to refresh first
+        triggerRefresh(); // Then trigger refresh in other components
+        console.log("triggerRefresh() called successfully");
     };
 
     const cancelDelete = () => {
@@ -325,14 +364,13 @@ export default function TenantsManagementPage() {
         setTenantToDelete(null);
     };
 
-
-    const formatPhoneNumber = (phone: string) => {
+    const formatPhoneNumber = (phone?: string) => {
         if (!phone) return 'N/A';
         return phone;
     };
 
-    const formatName = (firstName: string, lastName: string, middleName?: string) => {
-        const middle = middleName ? ` ${middleName}.` : '';
+    const formatName = (firstName?: string, lastName?: string, middleInitial?: string) => {
+        const middle = middleInitial ? ` ${middleInitial}.` : '';
         return `${firstName}${middle} ${lastName}`;
     };
 
@@ -344,7 +382,78 @@ export default function TenantsManagementPage() {
         };
     };
 
+    useEffect(() => {
+        console.log("triggered 1")
+        if (refreshTrigger > 0) {
+            console.log("Refreshing Apartment List...");
+            console.log("triggered 2")
+            fetchUnitsAndTenants();
+        }
+    }, [refreshTrigger]);
     
+    useEffect(() => {
+          if (selectedTenant && fullTenantData) {
+            const updated = fullTenantData.find(
+              ftd => ftd.unit.id === selectedTenant.unit.id
+            );
+    
+            if (updated) setSelectedTenant(updated);
+          }
+        }, [units, fullTenantData]);
+
+    const fetchUnitsAndTenants = async () => {
+        try {
+            //setLoading(true);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units`);
+            if (!res.ok) throw new Error("Error fetching units");
+            const unitData = await res.json();
+    
+            const tenantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants`);
+            if (!tenantRes.ok) throw new Error("Error fetching tenants");
+            const tenantData = await tenantRes.json();
+    
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subtenants`);
+            const subtenants = await response.json();
+    
+            const processed: TenantWithUnitDetails[] = unitData.map((u: Unit) => {
+              const tenant = tenantData.find((t: any) => Number(t.unitId) === u.id);
+              const tenantSubs = subtenants.filter((s: any) => s.mainTenantId === tenant?.id);
+    
+              if (tenant) {
+                return {
+                  id: tenant.id,
+                  firstName: tenant.firstName,
+                  middleInitial: tenant.middleInitial || tenant.middleInitial,
+                  lastName: tenant.lastName,
+                  email: tenant.email,
+                  phoneNumber: tenant.phoneNumber,
+                  dateAdded: tenant.dateAdded,
+                  subTenants: tenantSubs,
+                  unit: u,
+                };
+              } else {
+                return {
+                  id: null,
+                  firstName: null,
+                  middleInitial: null,
+                  lastName: null,
+                  email: null,
+                  phoneNumber: null,
+                  dateAdded: null,
+                  subTenants: [],
+                  unit: u,
+                } as TenantWithUnitDetails;
+              }
+            });
+    
+            setFullTenantData(processed);
+            setUnits(unitData);
+        } catch (err: any) {
+            setErrorMessage(err.message || "Error fetching data");
+        } finally {
+            //setLoading(false);
+        }
+    };
 
     // Note: We'll use the getUnitInfo function directly in the JSX
 
@@ -384,7 +493,7 @@ export default function TenantsManagementPage() {
                         />
                                                 
                         <button
-                            onClick={() => setModalOpen(true)}
+                            onClick={handleAddTenantClick}
                             className="px-4 py-2 text-yellow-300 bg-black hover:text-yellow-400 rounded-lg transition-all duration-200 text-sm font-medium border border-black hover:border-black"
                         >
                             Add Tenant
@@ -401,7 +510,7 @@ export default function TenantsManagementPage() {
                             <h3 className="text-xl font-semibold text-gray-900 mb-2">No tenants yet</h3>
                             <p className="text-gray-500 mb-6 max-w-md mx-auto">Get started by adding your first tenant to begin managing your property</p>
                             <button
-                                onClick={() => setModalOpen(true)}
+                                onClick={handleAddTenantClick}
                                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                             >
                                 Add Your First Tenant
@@ -410,7 +519,7 @@ export default function TenantsManagementPage() {
                     ) : (
                         <div className="divide-y divide-gray-100">
                             {tenants.filter((tenant) =>
-                                        `${tenant.firstName} ${tenant.middleName || ""} ${tenant.lastName}`
+                                        `${tenant.firstName} ${tenant.middleInitial || ""} ${tenant.lastName}`
                                         .toLowerCase()
                                         .includes(searchQuery.toLowerCase())
                                     )
@@ -421,12 +530,12 @@ export default function TenantsManagementPage() {
                                             <div className="flex items-center space-x-4">
                                                 <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center shadow-md">
                                                     <span className="text-yellow-300 font-semibold text-lg">
-                                                        {tenant.firstName.charAt(0)}{tenant.lastName.charAt(0)}
+                                                        {tenant.firstName?.charAt(0)}{tenant.lastName?.charAt(0)}
                                                     </span>
                                                 </div>
                                                 <div className="flex-1">
                                                     <h3 className="font-semibold text-gray-900 text-lg group-hover:text-blue-900 transition-colors">
-                                                        {formatName(tenant.firstName, tenant.lastName, tenant.middleName)}
+                                                        {formatName(tenant.firstName || "", tenant.lastName || "", tenant.middleInitial || "")}
                                                     </h3>
                                                     <div className="flex items-center space-x-2 mt-1">
                                                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
@@ -436,39 +545,49 @@ export default function TenantsManagementPage() {
                                                 </div>
                                             </div>
                                             
-                                            <div className="mt-4 flex flex-wrap justify-between items-center text-sm bg-gray-50 rounded-lg p-4">
-                                                <div className="flex items-center space-x-2 mb-2 md:mb-0">
-                                                    <Mail className="w-4 h-4 text-gray-400" />
-                                                    <span className="font-medium text-gray-700">Email:</span>
-                                                    <span className="text-gray-600">{tenant.email}</span>
+                                            <div className="mt-4 flex flex-wrap justify-left items-start text-sm bg-gray-50 rounded-lg p-4">
+                                                <div className="md:space-x-10 flex justify-left items-left w-1/2"> 
+                                                    <div className="flex items-center space-x-2 mb-2 md:mb-0">
+                                                        <Mail className="w-4 h-4 text-gray-400" />
+                                                        <span className="font-medium text-gray-700">Email:</span>
+                                                        <span className="text-gray-600">{tenant.email || ""}</span>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center space-x-2 mb-2 md:mb-0">
+                                                        <Phone className="w-4 h-4 text-gray-400" />
+                                                        <span className="font-medium text-gray-700">Phone:</span>
+                                                        <span className="text-gray-600">{formatPhoneNumber(tenant.phoneNumber || "")}</span>
+                                                    </div>
                                                 </div>
                                                 
-                                                <div className="flex items-center space-x-2 mb-2 md:mb-0">
-                                                    <Phone className="w-4 h-4 text-gray-400" />
-                                                    <span className="font-medium text-gray-700">Phone:</span>
-                                                    <span className="text-gray-600">{formatPhoneNumber(tenant.phoneNumber)}</span>
-                                                </div>
-                                                
-                                                <div className="flex items-center space-x-2 mb-2 md:mb-0">
-                                                    <DoorClosed  className="w-4 h-4 text-gray-400" />
-                                                    <span className="font-medium text-gray-700">Unit:</span>
-                                                    <span className="text-gray-600">{tenant.unit.unitNumber}</span>
-                                                </div>
-                                                
-                                                <div className="flex items-center space-x-2">
-                                                    <Building className="w-4 h-4 text-gray-400" />
-                                                    <span className="font-medium text-gray-700">Building:</span>
-                                                    <span className="text-gray-600">{tenant.unit.name}</span>
+                                                <div className="md:space-x-10 flex justify-right items-right w-auto"> 
+                                                    <div className="flex items-center space-x-2 mb-2 md:mb-0">
+                                                        <DoorClosed  className="w-4 h-4 text-gray-400" />
+                                                        <span className="font-medium text-gray-700">Unit:</span>
+                                                        <span className="text-gray-600">{tenant.unit.unitNumber}</span>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center space-x-2">
+                                                        <Building className="w-4 h-4 text-gray-400" />
+                                                        <span className="font-medium text-gray-700">Building:</span>
+                                                        <span className="text-gray-600">{tenant.unit.name}</span>
+                                                    </div>
+
+                                                    <div className="flex items-center space-x-2">
+                                                        <Users className="w-4 h-4 text-gray-400" />
+                                                        <span className="font-medium text-gray-700">No. of Sub-Tenants:</span>
+                                                        <span className="text-gray-600">{tenant.subTenants?.length ?? 0}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                         
                                         <div className="flex space-x-2 ml-6">
                                             <button
-                                                onClick={() => handleEditTenant(tenant)}
+                                                onClick={() => handleViewTenant(tenant)}
                                                 className="px-4 py-2 text-black bg-yellow-300 hover:bg-yellow-400 rounded-lg transition-all duration-200 text-sm font-medium border border-yellow-300 hover:border-yellow-400"
                                             >
-                                                Edit
+                                                View
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteTenant(tenant)}
@@ -495,13 +614,23 @@ export default function TenantsManagementPage() {
                 />
             </TenantPopUp>
 
-             <DeleteModal
+            {selectedTenant && (
+                <AllInModal 
+                    open={isViewModalOpen}
+                    selectedTab={"tenant"}
+                    onClose={() => {setIsViewModalOpen(false), setSelectedTenant(null), setEditingTenant(null)}}
+                    tenant={selectedTenant}
+                    onUpdateTenant={handleUpdates}
+                />
+            )}
+
+            <DeleteModal
                 open={deleteModalOpen}
                 title="Delete Tenant"
-                message={`Are you sure you want to delete ${tenantToDelete ? formatName(tenantToDelete.firstName, tenantToDelete.lastName, tenantToDelete.middleName) : 'this tenant'}?`}
+                message={`Are you sure you want to delete ${tenantToDelete ? formatName(tenantToDelete.firstName || "", tenantToDelete.lastName || "", tenantToDelete.middleInitial || "") : 'this tenant'}?`}
                 onCancel={cancelDelete}
                 onConfirm={confirmDeleteTenant}
-                />
+            />
                 
             {/* Error Modal */}
             {errorModalOpen && (
@@ -530,7 +659,7 @@ export default function TenantsManagementPage() {
                     </div>
                 </div>
             )}
-
+            
         </div>
     );
 }
