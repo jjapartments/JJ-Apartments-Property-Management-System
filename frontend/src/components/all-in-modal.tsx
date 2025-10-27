@@ -11,8 +11,8 @@ import { SubTenantDetails } from "./all-in-subtenants";
 interface AllInModalProps {
 	open: boolean
 	selectedTab: String
-	onClose: () => void
 	tenant: any; 
+	onClose: () => void
 	onUpdateTenant?: (updatedData: any) => Promise<void> | void;
 }
 
@@ -29,7 +29,6 @@ export function AllInModal({ open, selectedTab, onClose, tenant, onUpdateTenant 
 				return 	<TenantDetails 
 							tenant={tenant} 
 							isCurrEditing={setIsEditing} 
-							onSubmit={onUpdateTenant}
 						/>;
 			case "apartment":
 				return 	<ApartmentDetails 
@@ -109,10 +108,10 @@ export function AllInModal({ open, selectedTab, onClose, tenant, onUpdateTenant 
 
 					<DialogDescription className="text-sm text-muted-foreground">
 						{activeTab === "apartment"
-							? "View apartment details"
+							? "View apartment details."
 							: activeTab === "tenant"
-							? "View tenant information"
-							: "View sub-tenant information"}
+							? "View tenant information."
+							: "View sub-tenant information."}
 					</DialogDescription>
 
 					{/* Divider */}

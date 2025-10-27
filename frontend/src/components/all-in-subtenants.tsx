@@ -21,11 +21,6 @@ interface SubTenantDetailsProps {
      mainTenantId: number
      onSubmit?: (updatedData: any) => Promise<void> | void;
 }
-interface SubtenantWIndex {
-     subtenant: any;
-     index: number;
-     isEditing: boolean;
-}
 
 export function SubTenantDetails({ subtenants, maxOccupants, isCurrEditing, noTenant, mainTenantId, onSubmit }: SubTenantDetailsProps) {
      const [isEditing, setIsEditing] = useState(false);
