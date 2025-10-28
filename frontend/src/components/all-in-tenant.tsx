@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { InputField } from "@/components/ui/input";
 import { DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { useDataRefresh } from '@/contexts/DataContext';
-import { Button } from "@/components/ui/button"; 
-import { MoveOutModal } from "@/components/move-out-modal"; 
+import { useDataRefresh } from "@/contexts/DataContext";
+import { Button } from "@/components/ui/button";
+import { MoveOutModal } from "@/components/move-out-modal";
 
 interface TenantDetailsProps {
     tenant: any;
@@ -20,7 +20,7 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
 
     const [isEditing, setIsEditing] = useState(false);
     const handleEdit = () => {
-        isCurrEditing?.(true)
+        isCurrEditing?.(true);
         setIsEditing(true);
     };
 
@@ -33,14 +33,16 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
         messengerLink: tenant.messengerLink || "",
     });
 
-    const hasUnsavedChanges = JSON.stringify(formData) !== JSON.stringify({
-        firstName: tenant.firstName || "",
-        middleInitial: tenant.middleInitial || "",
-        lastName: tenant.lastName || "",
-        email: tenant.email || "",
-        phoneNumber: tenant.phoneNumber || "",
-        messengerLink: tenant.messengerLink || "",
-    });
+    const hasUnsavedChanges =
+        JSON.stringify(formData) !==
+        JSON.stringify({
+            firstName: tenant.firstName || "",
+            middleInitial: tenant.middleInitial || "",
+            lastName: tenant.lastName || "",
+            email: tenant.email || "",
+            phoneNumber: tenant.phoneNumber || "",
+            messengerLink: tenant.messengerLink || "",
+        });
 
     useEffect(() => {
         if (tenant) {
@@ -58,7 +60,7 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
     const handleCancel = () => {
         setIsEditing(false);
         setErrors({});
-        isCurrEditing?.(false)
+        isCurrEditing?.(false);
 
         setFormData({
             firstName: tenant.firstName || "",
@@ -88,22 +90,21 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
         }
 
         // Check valid input
-        if (!formData.firstName.trim()) 
+        if (!formData.firstName.trim())
             newErrors.firstName = "First name is required.";
-        if (!formData.lastName.trim()) 
+        if (!formData.lastName.trim())
             newErrors.lastName = "Last name is required.";
 
         if (formData.middleInitial && formData.middleInitial.length > 1)
             newErrors.middleInitial = "Middle initial must be one letter only.";
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!formData.email.trim()) 
-            newErrors.email = "Email is required.";
+        if (!formData.email.trim()) newErrors.email = "Email is required.";
         else if (formData.email && !emailRegex.test(formData.email))
             newErrors.email = "Invalid email format.";
 
         const phoneRegex = /^(09|\+639)\d{9}$/;
-        if (!formData.phoneNumber.trim()) 
+        if (!formData.phoneNumber.trim())
             newErrors.phoneNumber = "Phone number is required.";
         else if (!phoneRegex.test(formData.phoneNumber))
             newErrors.phoneNumber = "Invalid phone number format.";
@@ -114,8 +115,7 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
 
         setErrors(newErrors);
 
-        if (Object.keys(newErrors).length > 0) 
-            return;
+        if (Object.keys(newErrors).length > 0) return;
 
         // ====== Inputs are valid, proceed to payload ====== //
         setIsEditing(false);
@@ -133,11 +133,16 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
         console.log("Update tenant payload: ", payload);
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/tenants/update/${tenant.id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
+            const res = await fetch(
+                `${
+                    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+                }/api/tenants/update/${tenant.id}`,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                }
+            );
 
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
@@ -152,7 +157,7 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
             triggerRefresh?.();
         } catch (err: any) {
             const message = err?.message || "Failed to update tenant.";
-            setErrors({ submit: message })
+            setErrors({ submit: message });
         }
     };
 
@@ -162,30 +167,54 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
     };
 
     const handleMoveOut = () => {
-        console.log("Move out was clicked.")
-        setIsMoveOutModalOpen(true)
+        console.log("Move out was clicked.");
+        setIsMoveOutModalOpen(true);
     };
 
     const cancelMoveOut = () => {
         setIsMoveOutModalOpen(false);
     };
 
-    const confirmMoveOut = async () => {
+    const confirmMoveOut = async (moveOutDate: string) => {
         setIsMoveOutModalOpen(false);
 
         try {
-            // [TO UPDATE] :: Proper API call
-            const today = new Date();
-            const formattedDate = today.toLocaleDateString("en-US", {
+            const formattedMoveOutDate = new Date(moveOutDate).toISOString();
+
+            // [TO UPDATE] :: Replace with your actual API endpoint
+            /*const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/tenants/moveout`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        tenantId: tenant.id,
+                        moveOutDate: formattedMoveOutDate,
+                    }),
+                }
+            );
+
+            if (!res.ok) {
+                throw new Error("Failed to update tenant move-out date.");
+            }*/
+
+            const formattedDisplayDate = new Date(
+                moveOutDate
+            ).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
             });
 
-            alert(`Tenant has moved out today, ${formattedDate}.`);
-            console.log("Move out confirmed");
+            alert(`Tenant has moved out on ${formattedDisplayDate}.`);
+            console.log("✅ Move out confirmed:", formattedMoveOutDate);
+
+            window.location.reload();
         } catch (error: any) {
-            console.log("Failed to move out tenant.", error)
+            console.error("❌ Failed to move out tenant:", error);
+            alert("Failed to move out tenant. Please try again.");
         }
     };
 
@@ -197,7 +226,7 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
         return (
             <div className="flex flex-col items-center justify-center h-full space-y-4">
                 <DialogDescription className="text-s text-muted-foreground text-center">
-                        No tenant available.
+                    No tenant available.
                 </DialogDescription>
             </div>
         );
@@ -207,59 +236,65 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
         <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <InputField
-                        isEditing={isEditing}
-                        label="First Name"
-                        value={formData.firstName || ""}
-                        placeholder="e.g., Juan"
-                        required
-                        onChange={(e) => handleChange("firstName", e.target.value)}
+                    isEditing={isEditing}
+                    label="First Name"
+                    value={formData.firstName || ""}
+                    placeholder="e.g., Juan"
+                    required
+                    onChange={(e) => handleChange("firstName", e.target.value)}
                 />
                 <InputField
-                        isEditing={isEditing}
-                        label="Middle Initial"
-                        value={formData.middleInitial || ""}
-                        placeholder="e.g., S"
-                        onChange={(e) => handleChange("middleInitial", e.target.value)}
+                    isEditing={isEditing}
+                    label="Middle Initial"
+                    value={formData.middleInitial || ""}
+                    placeholder="e.g., S"
+                    onChange={(e) =>
+                        handleChange("middleInitial", e.target.value)
+                    }
                 />
                 <InputField
-                        isEditing={isEditing}
-                        label="Last Name"
-                        value={formData.lastName || ""}
-                        placeholder="e.g., De La Cruz"
-                        required
-                        onChange={(e) => handleChange("lastName", e.target.value)}
+                    isEditing={isEditing}
+                    label="Last Name"
+                    value={formData.lastName || ""}
+                    placeholder="e.g., De La Cruz"
+                    required
+                    onChange={(e) => handleChange("lastName", e.target.value)}
                 />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <InputField
-                        isEditing={isEditing}
-                        label="Email"
-                        type="email"
-                        value={formData.email || ""}
-                        placeholder="e.g., juan.delacruz@email.com"
-                        required
-                        onChange={(e) => handleChange("email", e.target.value)}
+                    isEditing={isEditing}
+                    label="Email"
+                    type="email"
+                    value={formData.email || ""}
+                    placeholder="e.g., juan.delacruz@email.com"
+                    required
+                    onChange={(e) => handleChange("email", e.target.value)}
                 />
                 <InputField
-                        isEditing={isEditing}
-                        label="Cellphone Number"
-                        type="tel"
-                        value={formData.phoneNumber || ""}
-                        placeholder="e.g., 09123456789"
-                        required
-                        onChange={(e) => handleChange("phoneNumber", e.target.value)}
+                    isEditing={isEditing}
+                    label="Cellphone Number"
+                    type="tel"
+                    value={formData.phoneNumber || ""}
+                    placeholder="e.g., 09123456789"
+                    required
+                    onChange={(e) =>
+                        handleChange("phoneNumber", e.target.value)
+                    }
                 />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-1 gap-2">
                 <InputField
-                        isEditing={isEditing}
-                        label="Messenger / Facebook Link"
-                        type="url" 
-                        value={formData.messengerLink} 
-                        placeholder="e.g., https://facebook.com/juan.delacruz"
-                        onChange={(e) => handleChange("messengerLink", e.target.value)}
+                    isEditing={isEditing}
+                    label="Messenger / Facebook Link"
+                    type="url"
+                    value={formData.messengerLink}
+                    placeholder="e.g., https://facebook.com/juan.delacruz"
+                    onChange={(e) =>
+                        handleChange("messengerLink", e.target.value)
+                    }
                 />
             </div>
 
@@ -267,35 +302,38 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
 
             <DialogFooter className="w-full flex items-center justify-between">
                 <div className="flex-1">
-                {isEditing && (
-                <>
-                        {Object.values(errors).length > 0 ? (
-                        <ul className="text-sm text-red-500 list-disc list-inside">
-                            {Object.values(errors).map((err, idx) => (
-                            <li key={idx}>{err}</li>
-                            ))}
-                        </ul>
-                        ) : hasUnsavedChanges ? (
-                        <p className="text-sm text-gray-500 italic">
-                            You have unsaved changes.
-                        </p>
-                        ) : null}
-                </>
-                )}
+                    {isEditing && (
+                        <>
+                            {Object.values(errors).length > 0 ? (
+                                <ul className="text-sm text-red-500 list-disc list-inside">
+                                    {Object.values(errors).map((err, idx) => (
+                                        <li key={idx}>{err}</li>
+                                    ))}
+                                </ul>
+                            ) : hasUnsavedChanges ? (
+                                <p className="text-sm text-gray-500 italic">
+                                    You have unsaved changes.
+                                </p>
+                            ) : null}
+                        </>
+                    )}
                 </div>
 
                 <div className="flex gap-2">
-                        {isEditing ? (
-                            <>
-                            <Button className="min-w-[100px]" onClick={handleCancel}>
+                    {isEditing ? (
+                        <>
+                            <Button
+                                className="min-w-[100px]"
+                                onClick={handleCancel}
+                            >
                                 Cancel
                             </Button>
                             <Button variant="secondary" onClick={handleSubmit}>
                                 Submit
                             </Button>
-                            </>
-                        ) : (
-                            <>
+                        </>
+                    ) : (
+                        <>
                             <Button onClick={handleMoveOut}>Move Out</Button>
                             <Button
                                 className="min-w-[100px]"
@@ -304,8 +342,8 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
                             >
                                 Edit
                             </Button>
-                            </>
-                        )}
+                        </>
+                    )}
                 </div>
             </DialogFooter>
 
@@ -314,7 +352,7 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
                 title="Move Out Tenant"
                 message={`Are you sure you want to move out ${tenant.firstName} ${tenant.lastName} from ${tenant.unit.name}? This action cannot be undone.`}
                 onCancel={cancelMoveOut}
-                onConfirm={() => confirmMoveOut()}
+                onConfirm={(date) => confirmMoveOut(date)}
             />
         </div>
     );

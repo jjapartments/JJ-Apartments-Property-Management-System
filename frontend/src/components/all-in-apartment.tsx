@@ -99,7 +99,7 @@ export function ApartmentDetails({ unit, isCurrEditing, onSubmit }: ApartmentDet
                setCurrentUnit(body); 
                setFormData(body)
 
-               triggerRefresh();
+               triggerRefresh?.();
 
                if (onSubmit) {
                     onSubmit(null)

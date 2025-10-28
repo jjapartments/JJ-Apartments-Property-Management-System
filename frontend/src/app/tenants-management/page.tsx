@@ -3,10 +3,9 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useDataRefresh } from '@/contexts/DataContext';
+import { AddTenantModal } from "@/components/add-tenant"
 import { AllInModal } from "@/components/all-in-modal";
 import { Mail, Phone, Building, DoorClosed, Users } from "lucide-react";
-import { DeleteModal } from "@/components/delete-modal";
-import { AddTenantModal } from "@/components/add-tenant";
 import { MoveOutModal } from "@/components/move-out-modal"; 
 
 type SubTenant = {
@@ -44,16 +43,10 @@ type TenantWithUnitDetails = Omit<Tenant, 'unit'> & {
 };
 
 export default function TenantsManagementPage() {
-    const { isLoggedIn, isLoading } = useAuth();
     const { refreshTrigger, triggerRefresh } = useDataRefresh();
-    const router = useRouter();
-    const [modalOpen, setModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState<TenantWithUnitDetails | null>(null);
     const [tenants, setTenants] = useState<TenantWithUnitDetails[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
-
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [tenantToDelete, setTenantToDelete] = useState<TenantWithUnitDetails | null>(null);
     
     const [errorModalOpen, setErrorModalOpen] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string>('');
@@ -129,14 +122,6 @@ export default function TenantsManagementPage() {
         }
     };
 
-    const toggleModal = () => {
-        setModalOpen(!modalOpen);
-        
-        if (modalOpen) {
-            setEditingTenant(null);
-        }
-    };
-
     const getEmptyUnits = () => {
         return units.filter(
             (unit) => !tenants.some((tenant) => tenant.unit.id === unit.id)
@@ -145,69 +130,11 @@ export default function TenantsManagementPage() {
 
     const handleAddTenantClick = () => {
         setEditingTenant(null);  
-        setModalOpen(true);
-
+        
         const availableUnits = getEmptyUnits();
         setEmptyUnits(availableUnits);
 
         setIsAddTenantModalOpen(true)
-    };
-
-    const handleAddTenant = async (formData) => {
-        try {
-            const tenantDataPayload = {
-                firstName: formData.firstName,
-                middleInitial: formData.middleInitial || null,
-                lastName: formData.lastName,
-                email: formData.email,
-                phoneNumber: formData.phoneNumber,
-                messengerLink: formData.messengerLink,
-                unitId: formData.unitId,
-                moveInDate: formData.moveInDate
-            };
-            console.log("Add tenant payload:", tenantDataPayload)
-
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants/add`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(tenantDataPayload),
-            })
-            
-            if (!res.ok){
-                const errorData = await res.json().catch(() => ({ message: 'Unknown error' }));
-                
-                // Handle specific error messages from backend
-                let displayMessage = 'Failed to add tenant. Please try again.';
-                if (errorData.error && typeof errorData.error === 'string') {
-                    if (errorData.error.includes('email is already taken')) {
-                        displayMessage = 'This email address is already registered with another tenant. Please use a different email address.';
-                    } else if (errorData.error.includes('phone number is already taken')) {
-                        displayMessage = 'This phone number is already registered with another tenant. Please use a different phone number.';
-                    } else if (errorData.error.includes('tenant is already registered')) {
-                        displayMessage = 'This tenant is already registered in the system.';
-                    } else {
-                        displayMessage = errorData.error;
-                    }
-                }
-                
-                setErrorMessage(displayMessage);
-                setErrorModalOpen(true);
-                return;
-            }
-            
-            console.log("Tenant added successfully, triggering refresh...");
-            toggleModal();
-            console.log("About to call triggerRefresh()");
-            await fetchTenants();
-            triggerRefresh(); 
-            console.log("triggerRefresh() called successfully");
-        } catch (error) {
-            console.error('Error adding tenant:', error);
-            setErrorMessage('An unexpected error occurred while adding the tenant. Please try again.');
-            setErrorModalOpen(true);
-        }
     };
 
     const handleViewTenant = (tenant: TenantWithUnitDetails) => {
@@ -215,76 +142,15 @@ export default function TenantsManagementPage() {
         setSelectedTenant(tenant);
         setIsViewModalOpen(true);
     };
-    const handleUpdates = async (updatedData: any) => {
-        if (updatedData)
-            handleUpdateTenant(updatedData)
 
+    const handleUpdates = async () => {
         triggerRefresh(); 
         fetchTenants(); 
         setIsViewModalOpen(false);
+        setTimeout(() => {
+            setIsViewModalOpen(true);
+        }, 150);
     }
-
-    const handleUpdateTenant = async (updatedData: any) => {
-        if (!editingTenant) {
-            console.error('No tenant selected for update.');
-            return;
-        }
-
-        const tenantUpdatePayload = {
-            firstName: updatedData.firstName,
-            middleInitial: updatedData.middleInitial || null,
-            lastName: updatedData.lastName,
-            email: updatedData.email,
-            phoneNumber: updatedData.phoneNumber,
-            unitId: updatedData.unitId
-        };
-
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/tenants/update/${editingTenant.id}`, {
-                method: 'PATCH',
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(tenantUpdatePayload)
-            });
-            
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({ message: 'Unknown error' }));
-                
-                // Handle specific error messages from backend
-                let displayMessage = 'Failed to update tenant. Please try again.';
-                if (errorData.error && typeof errorData.error === 'string') {
-                    if (errorData.error.includes('email is already taken')) {
-                        displayMessage = 'This email address is already registered with another tenant. Please use a different email address.';
-                    } else if (errorData.error.includes('phone number is already taken')) {
-                        displayMessage = 'This phone number is already registered with another tenant. Please use a different phone number.';
-                    } else if (errorData.error.includes('tenant is already registered')) {
-                        displayMessage = 'This tenant is already registered in the system.';
-                    } else {
-                        displayMessage = errorData.error;
-                    }
-                }
-                
-                setErrorMessage(displayMessage);
-                setErrorModalOpen(true);
-                return;
-            }
-            
-            console.log("About to call triggerRefresh()");
-            await fetchTenants();
-            triggerRefresh();
-            console.log("triggerRefresh() called successfully");
-
-            if (selectedTenant) {
-                const updatedTenant = tenants.find(t => t.id === selectedTenant.id);
-                if (updatedTenant) {
-                    setSelectedTenant(updatedTenant);
-                }
-            }
-        } catch (error) {
-            console.error('Error updating tenant:', error);
-            setErrorMessage('An unexpected error occurred while updating the tenant. Please try again.');
-            setErrorModalOpen(true);
-        }
-    };
 
     const handleMoveOut = (tenant: TenantWithUnitDetails) => {
         console.log(tenant)
@@ -311,14 +177,8 @@ export default function TenantsManagementPage() {
             console.log("Failed to move out tenant.", error)
         }
     }
-
     const cancelMoveOut = () => {
         setIsMoveOutModalOpen(false);
-    };
-
-    const cancelDelete = () => {
-        setDeleteModalOpen(false);
-        setTenantToDelete(null);
     };
 
     const formatPhoneNumber = (phone?: string) => {
@@ -332,10 +192,8 @@ export default function TenantsManagementPage() {
     };
 
     useEffect(() => {
-        console.log("triggered 1")
         if (refreshTrigger > 0) {
             console.log("Refreshing Apartment List...");
-            console.log("triggered 2")
             fetchUnitsAndTenants();
         }
     }, [refreshTrigger]);
@@ -352,7 +210,6 @@ export default function TenantsManagementPage() {
 
     const fetchUnitsAndTenants = async () => {
         try {
-            //setLoading(true);
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units`);
             if (!res.ok) throw new Error("Error fetching units");
             const unitData = await res.json();
@@ -365,42 +222,40 @@ export default function TenantsManagementPage() {
             const subtenants = await response.json();
     
             const processed: TenantWithUnitDetails[] = unitData.map((u: Unit) => {
-                const tenant = tenantData.find((t: any) => Number(t.unitId) === u.id);
-                const tenantSubs = subtenants.filter((s: any) => s.mainTenantId === tenant?.id);
-        
-                if (tenant) {
-                    return {
-                        id: tenant.id,
-                        firstName: tenant.firstName,
-                        middleInitial: tenant.middleInitial || tenant.middleInitial,
-                        lastName: tenant.lastName,
-                        email: tenant.email,
-                        phoneNumber: tenant.phoneNumber,
-                        dateAdded: tenant.dateAdded,
-                        subTenants: tenantSubs,
-                        unit: u,
-                    };
-                } else {
-                    return {
-                        id: null,
-                        firstName: null,
-                        middleInitial: null,
-                        lastName: null,
-                        email: null,
-                        phoneNumber: null,
-                        dateAdded: null,
-                        subTenants: [],
-                        unit: u,
-                    } as TenantWithUnitDetails;
-                }
+              const tenant = tenantData.find((t: any) => Number(t.unitId) === u.id);
+              const tenantSubs = subtenants.filter((s: any) => s.mainTenantId === tenant?.id);
+    
+              if (tenant) {
+                return {
+                  id: tenant.id,
+                  firstName: tenant.firstName,
+                  middleInitial: tenant.middleInitial || tenant.middleInitial,
+                  lastName: tenant.lastName,
+                  email: tenant.email,
+                  phoneNumber: tenant.phoneNumber,
+                  dateAdded: tenant.dateAdded,
+                  subTenants: tenantSubs,
+                  unit: u,
+                };
+              } else {
+                return {
+                  id: null,
+                  firstName: null,
+                  middleInitial: null,
+                  lastName: null,
+                  email: null,
+                  phoneNumber: null,
+                  dateAdded: null,
+                  subTenants: [],
+                  unit: u,
+                } as TenantWithUnitDetails;
+              }
             });
     
             setFullTenantData(processed);
             setUnits(unitData);
         } catch (err: any) {
             setErrorMessage(err.message || "Error fetching data");
-        } finally {
-            //setLoading(false);
         }
     };
 
@@ -540,7 +395,7 @@ export default function TenantsManagementPage() {
                 open={isAddTenantModalOpen}
                 onClose={() => setIsAddTenantModalOpen(false)}
                 units={emptyUnits}
-                onSubmit={handleAddTenant}
+                fetchTenants={fetchTenants} 
             />
 
             {selectedTenant && (
