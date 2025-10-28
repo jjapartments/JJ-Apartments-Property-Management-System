@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Home, User, Users } from "lucide-react";
 import { TenantDetails } from "@/components/all-in-tenant";
 import { ApartmentDetails } from "./all-in-apartment";
@@ -20,7 +19,6 @@ export function AllInModal({ open, selectedTab, onClose, tenant, onUpdateTenant 
 	const [activeTab, setActiveTab] = useState<"apartment" | "tenant" | "subtenants">(
 		selectedTab as "apartment" | "tenant" | "subtenants"
 	);
-	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
 
 	const renderTabContent = () => {

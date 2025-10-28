@@ -155,9 +155,10 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
             setErrors({});
 
             triggerRefresh?.();
-        } catch (err: any) {
-            const message = err?.message || "Failed to update tenant.";
+        } catch (error: any) {
+            const message = error?.message || "Failed to update tenant.";
             setErrors({ submit: message });
+            setIsEditing(true);
         }
     };
 
@@ -213,8 +214,8 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
 
             window.location.reload();
         } catch (error: any) {
-            console.error("❌ Failed to move out tenant:", error);
-            alert("Failed to move out tenant. Please try again.");
+            const message = error?.message || "Failed to update tenant.";
+            setErrors({ submit: message });
         }
     };
 
@@ -233,127 +234,142 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
     }
 
     return (
-        <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <InputField
-                    isEditing={isEditing}
-                    label="First Name"
-                    value={formData.firstName || ""}
-                    placeholder="e.g., Juan"
-                    required
-                    onChange={(e) => handleChange("firstName", e.target.value)}
-                />
-                <InputField
-                    isEditing={isEditing}
-                    label="Middle Initial"
-                    value={formData.middleInitial || ""}
-                    placeholder="e.g., S"
-                    onChange={(e) =>
-                        handleChange("middleInitial", e.target.value)
-                    }
-                />
-                <InputField
-                    isEditing={isEditing}
-                    label="Last Name"
-                    value={formData.lastName || ""}
-                    placeholder="e.g., De La Cruz"
-                    required
-                    onChange={(e) => handleChange("lastName", e.target.value)}
-                />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <InputField
-                    isEditing={isEditing}
-                    label="Email"
-                    type="email"
-                    value={formData.email || ""}
-                    placeholder="e.g., juan.delacruz@email.com"
-                    required
-                    onChange={(e) => handleChange("email", e.target.value)}
-                />
-                <InputField
-                    isEditing={isEditing}
-                    label="Cellphone Number"
-                    type="tel"
-                    value={formData.phoneNumber || ""}
-                    placeholder="e.g., 09123456789"
-                    required
-                    onChange={(e) =>
-                        handleChange("phoneNumber", e.target.value)
-                    }
-                />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-2">
-                <InputField
-                    isEditing={isEditing}
-                    label="Messenger / Facebook Link"
-                    type="url"
-                    value={formData.messengerLink}
-                    placeholder="e.g., https://facebook.com/juan.delacruz"
-                    onChange={(e) =>
-                        handleChange("messengerLink", e.target.value)
-                    }
-                />
-            </div>
-
-            <hr className="border-t border-gray-200" />
-
-            <DialogFooter className="w-full flex items-center justify-between">
-                <div className="flex-1">
-                    {isEditing && (
-                        <>
-                            {Object.values(errors).length > 0 ? (
-                                <ul className="text-sm text-red-500 list-disc list-inside">
-                                    {Object.values(errors).map((err, idx) => (
-                                        <li key={idx}>{err}</li>
-                                    ))}
-                                </ul>
-                            ) : hasUnsavedChanges ? (
-                                <p className="text-sm text-gray-500 italic">
-                                    You have unsaved changes.
-                                </p>
-                            ) : null}
-                        </>
-                    )}
+        <div>
+            <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <InputField
+                        isEditing={isEditing}
+                        label="First Name"
+                        value={formData.firstName || ""}
+                        placeholder="e.g., Juan"
+                        required
+                        onChange={(e) =>
+                            handleChange("firstName", e.target.value)
+                        }
+                    />
+                    <InputField
+                        isEditing={isEditing}
+                        label="Middle Initial"
+                        value={formData.middleInitial || ""}
+                        placeholder="e.g., S"
+                        onChange={(e) =>
+                            handleChange("middleInitial", e.target.value)
+                        }
+                    />
+                    <InputField
+                        isEditing={isEditing}
+                        label="Last Name"
+                        value={formData.lastName || ""}
+                        placeholder="e.g., De La Cruz"
+                        required
+                        onChange={(e) =>
+                            handleChange("lastName", e.target.value)
+                        }
+                    />
                 </div>
 
-                <div className="flex gap-2">
-                    {isEditing ? (
-                        <>
-                            <Button
-                                className="min-w-[100px]"
-                                onClick={handleCancel}
-                            >
-                                Cancel
-                            </Button>
-                            <Button variant="secondary" onClick={handleSubmit}>
-                                Submit
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button onClick={handleMoveOut}>Move Out</Button>
-                            <Button
-                                className="min-w-[100px]"
-                                variant="secondary"
-                                onClick={handleEdit}
-                            >
-                                Edit
-                            </Button>
-                        </>
-                    )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <InputField
+                        isEditing={isEditing}
+                        label="Email"
+                        type="email"
+                        value={formData.email || ""}
+                        placeholder="e.g., juan.delacruz@email.com"
+                        required
+                        onChange={(e) => handleChange("email", e.target.value)}
+                    />
+                    <InputField
+                        isEditing={isEditing}
+                        label="Cellphone Number"
+                        type="tel"
+                        value={formData.phoneNumber || ""}
+                        placeholder="e.g., 09123456789"
+                        required
+                        onChange={(e) =>
+                            handleChange("phoneNumber", e.target.value)
+                        }
+                    />
                 </div>
-            </DialogFooter>
 
-            <MoveOutModal
-                open={isMoveOutModalOpen}
-                title="Move Out Tenant"
-                message={`Are you sure you want to move out ${tenant.firstName} ${tenant.lastName} from ${tenant.unit.name}? This action cannot be undone.`}
-                onCancel={cancelMoveOut}
-                onConfirm={(date) => confirmMoveOut(date)}
-            />
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-2">
+                    <InputField
+                        isEditing={isEditing}
+                        label="Messenger / Facebook Link"
+                        type="url"
+                        value={formData.messengerLink}
+                        placeholder="e.g., https://facebook.com/juan.delacruz"
+                        onChange={(e) =>
+                            handleChange("messengerLink", e.target.value)
+                        }
+                    />
+                </div>
+
+                <hr className="border-t border-gray-200" />
+
+                <DialogFooter className="w-full flex items-center justify-between">
+                    <div className="flex-1">
+                        {isEditing && (
+                            <>
+                                {Object.values(errors).length > 0 ? (
+                                    Object.values(errors).length > 1 ? (
+                                        <p className="text-sm text-red-500">
+                                            Please fill in required fields.
+                                        </p>
+                                    ) : (
+                                        <p className="text-sm text-red-500">
+                                            {Object.values(errors)[0]}
+                                        </p>
+                                    )
+                                ) : hasUnsavedChanges ? (
+                                    <p className="text-sm text-gray-500 italic">
+                                        You have unsaved changes.
+                                    </p>
+                                ) : null}
+                            </>
+                        )}
+                    </div>
+
+                    <div className="flex gap-2">
+                        {isEditing ? (
+                            <>
+                                <Button
+                                    className="min-w-[100px]"
+                                    onClick={handleCancel}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={handleSubmit}
+                                >
+                                    Submit
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button onClick={handleMoveOut}>
+                                    Move Out
+                                </Button>
+                                <Button
+                                    className="min-w-[100px]"
+                                    variant="secondary"
+                                    onClick={handleEdit}
+                                >
+                                    Edit
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                </DialogFooter>
+
+                <MoveOutModal
+                    open={isMoveOutModalOpen}
+                    title="Move Out Tenant"
+                    message={`Are you sure you want to move out ${tenant.firstName} ${tenant.lastName} from ${tenant.unit.name}? This action cannot be undone.`}
+                    onCancel={cancelMoveOut}
+                    onConfirm={(date) => confirmMoveOut(date)}
+                />
+            </div>
         </div>
     );
 }
