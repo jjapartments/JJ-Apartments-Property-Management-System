@@ -8,8 +8,6 @@ import { Mail, Phone, Building, DoorClosed, Users } from "lucide-react";
 import { DeleteModal } from "@/components/delete-modal";
 import { AddTenantModal } from "@/components/add-tenant";
 import { MoveOutModal } from "@/components/move-out-modal"; 
-import { AddTenantModal } from "@/components/add-tenant";
-import { MoveOutModal } from "@/components/move-out-modal"; 
 
 type SubTenant = {
     firstName: string,
