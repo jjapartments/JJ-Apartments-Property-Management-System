@@ -3,11 +3,11 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useDataRefresh } from '@/contexts/DataContext';
-import { TenantPopUp } from "@/components/TenantPopUp";
-import { TenantMgt } from "@/components/TenantMgt";
 import { AllInModal } from "@/components/all-in-modal";
 import { Mail, Phone, Building, DoorClosed, Users } from "lucide-react";
 import { DeleteModal } from "@/components/delete-modal";
+import { AddTenantModal } from "@/components/add-tenant";
+import { MoveOutModal } from "@/components/move-out-modal"; 
 
 type SubTenant = {
     firstName: string,
@@ -59,18 +59,19 @@ export default function TenantsManagementPage() {
     const [errorMessage, setErrorMessage] = useState<string>('');
 
     const [units, setUnits] = useState<Unit[]>([]);
+    const [emptyUnits, setEmptyUnits] = useState<Unit[]>([]);
 
     // View
     const [selectedTenant, setSelectedTenant] = useState<TenantWithUnitDetails | null>(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [fullTenantData, setFullTenantData] = useState<TenantWithUnitDetails[] | null>(null);
 
-    // useEffect(() => {
-    //     if (!isLoading && !isLoggedIn) {
-    //         router.replace('/login');
-    //     }
-    // }, [isLoggedIn, isLoading, router]);
-    
+    // Add Tenant
+    const [isAddTenantModalOpen, setIsAddTenantModalOpen] = useState(false)
+
+    // Move Out
+    const [isMoveOutModalOpen, setIsMoveOutModalOpen] = useState(false)
+    const [tenantToMoveOut, setTenantToMoveOut] = useState<TenantWithUnitDetails | null>(null);
     
     useEffect(() => {
         fetchUnits();
@@ -136,71 +137,33 @@ export default function TenantsManagementPage() {
         }
     };
 
+    const getEmptyUnits = () => {
+        return units.filter(
+            (unit) => !tenants.some((tenant) => tenant.unit.id === unit.id)
+        );
+    };
     const handleAddTenantClick = () => {
         setEditingTenant(null);  
         setModalOpen(true);
+
+        const availableUnits = getEmptyUnits();
+        setEmptyUnits(availableUnits);
+
+        setIsAddTenantModalOpen(true)
     };
-
-    const toggleViewModal = () => {
-        setIsViewModalOpen(!isViewModalOpen);
-        if (isViewModalOpen) {
-            setEditingTenant(null);  
-        }
-    };
-
-    const getUnit_id = async (unitName, unitNumber) => {
-        try {
-        
-        const encodedUnitName = unitName ? encodeURIComponent(unitName) : '';
-        const encodedUnitNumber = unitNumber ? encodeURIComponent(unitNumber) : '';
-
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/units/findUnitId?name=${encodedUnitName}&unitNumber=${encodedUnitNumber}`;
-        console.log("DEBUG (Frontend): Full URL being sent:", url);
-        
-        const res = await fetch(url);
-        
-        if (!res.ok) {
-            const errorData = await res.json().catch(() => ({ message: 'No specific error response from server.' }));
-            console.error(`getUnit_id: Backend responded with ${res.status} error. StatusText: ${res.statusText}, ErrorData:`, errorData);
-            
-            if (res.status === 404 || res.status === 400) { 
-                return null; 
-            }
-            throw new Error(`HTTP error! status: ${res.status} - ${errorData.message || res.statusText}`);
-        }
-        
-        const data = await res.json();
-        console.log("DEBUG (Frontend): getUnit_id Raw response data:", data);
-        
-        
-        if (typeof data.id === 'number') {
-            console.log("DEBUG (Frontend): getUnit_id Returning numeric ID:", data.id);
-            return data.id;
-        } else if (typeof data === 'number') { 
-            console.log("DEBUG (Frontend): getUnit_id Raw response data was a number:", data);
-            return data;
-        } else {
-            console.warn("DEBUG (Frontend): getUnit_id: 'id' property not found or not a number in API response, or data is not a bare number:", data);
-            return null; 
-        }
-    } catch (e) {
-        console.error("DEBUG (Frontend): getUnit_id: Caught error in try-catch:", e);
-        return null; 
-    }
-        
-        
-    };
-
     const handleAddTenant = async (formData) => {
         try {
             const tenantDataPayload = {
                 firstName: formData.firstName,
-                middleInitial: formData.middleInitial || null, 
+                middleInitial: formData.middleInitial || null,
                 lastName: formData.lastName,
                 email: formData.email,
                 phoneNumber: formData.phoneNumber,
-                unitId: formData.unitId
+                messengerLink: formData.messengerLink,
+                unitId: formData.unitId,
+                moveInDate: formData.moveInDate
             };
+            console.log("Add tenant payload:", tenantDataPayload)
 
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants/add`, {
                 method: 'POST',
@@ -235,8 +198,8 @@ export default function TenantsManagementPage() {
             console.log("Tenant added successfully, triggering refresh...");
             toggleModal();
             console.log("About to call triggerRefresh()");
-            await fetchTenants(); // Wait for data to refresh first
-            triggerRefresh(); // Then trigger refresh in other components
+            await fetchTenants();
+            triggerRefresh(); 
             console.log("triggerRefresh() called successfully");
         } catch (error) {
             console.error('Error adding tenant:', error);
@@ -245,29 +208,18 @@ export default function TenantsManagementPage() {
         }
     };
 
-    const handleEditTenant = (tenant: TenantWithUnitDetails) => {
-        setEditingTenant(tenant);
-        setModalOpen(true);
-    };
-
     const handleViewTenant = (tenant: TenantWithUnitDetails) => {
         setEditingTenant(tenant)
         setSelectedTenant(tenant);
         setIsViewModalOpen(true);
     };
-
     const handleUpdates = async (updatedData: any) => {
-        console.log("triggered")
         if (updatedData)
             handleUpdateTenant(updatedData)
 
         triggerRefresh(); 
-        console.log("triggerRefresh() called successfully");
         fetchTenants(); 
         setIsViewModalOpen(false);
-        setTimeout(() => {
-            setIsViewModalOpen(true);
-        }, 150);
     }
 
     const handleUpdateTenant = async (updatedData: any) => {
@@ -315,7 +267,7 @@ export default function TenantsManagementPage() {
             }
             
             console.log("About to call triggerRefresh()");
-            await fetchTenants(); // Wait for data to refresh first
+            await fetchTenants();
             triggerRefresh();
             console.log("triggerRefresh() called successfully");
 
@@ -336,6 +288,32 @@ export default function TenantsManagementPage() {
         setTenantToDelete(tenant);
         setDeleteModalOpen(true);
     };
+
+    const handleMoveOut = (tenant: TenantWithUnitDetails) => {
+        console.log(tenant)
+        setTenantToMoveOut(tenant)
+        setIsMoveOutModalOpen(true)
+    }
+    const confirmMoveOut = async () => {
+        if (!tenantToMoveOut) 
+            return;
+        setIsMoveOutModalOpen(false);
+
+        try {
+            // [TO UPDATE] :: Proper API call
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+            });
+
+            alert(`Tenant has moved out today, ${formattedDate}.`);
+            console.log("Move out confirmed");
+        } catch (error: any) {
+            console.log("Failed to move out tenant.", error)
+        }
+    }
 
     const confirmDeleteTenant = async () => {
         if (!tenantToDelete) return;
@@ -359,6 +337,10 @@ export default function TenantsManagementPage() {
         console.log("triggerRefresh() called successfully");
     };
 
+    const cancelMoveOut = () => {
+        setIsMoveOutModalOpen(false);
+    };
+
     const cancelDelete = () => {
         setDeleteModalOpen(false);
         setTenantToDelete(null);
@@ -372,14 +354,6 @@ export default function TenantsManagementPage() {
     const formatName = (firstName?: string, lastName?: string, middleInitial?: string) => {
         const middle = middleInitial ? ` ${middleInitial}.` : '';
         return `${firstName}${middle} ${lastName}`;
-    };
-
-    const getUnitInfo = (unitId: number) => {
-        const unit = units.find(u => u.id === unitId);
-        return {
-            unitNumber: unit?.unitNumber || 'Unknown',
-            buildingName: unit?.name || 'Unknown'
-        };
     };
 
     useEffect(() => {
@@ -416,34 +390,34 @@ export default function TenantsManagementPage() {
             const subtenants = await response.json();
     
             const processed: TenantWithUnitDetails[] = unitData.map((u: Unit) => {
-              const tenant = tenantData.find((t: any) => Number(t.unitId) === u.id);
-              const tenantSubs = subtenants.filter((s: any) => s.mainTenantId === tenant?.id);
-    
-              if (tenant) {
-                return {
-                  id: tenant.id,
-                  firstName: tenant.firstName,
-                  middleInitial: tenant.middleInitial || tenant.middleInitial,
-                  lastName: tenant.lastName,
-                  email: tenant.email,
-                  phoneNumber: tenant.phoneNumber,
-                  dateAdded: tenant.dateAdded,
-                  subTenants: tenantSubs,
-                  unit: u,
-                };
-              } else {
-                return {
-                  id: null,
-                  firstName: null,
-                  middleInitial: null,
-                  lastName: null,
-                  email: null,
-                  phoneNumber: null,
-                  dateAdded: null,
-                  subTenants: [],
-                  unit: u,
-                } as TenantWithUnitDetails;
-              }
+                const tenant = tenantData.find((t: any) => Number(t.unitId) === u.id);
+                const tenantSubs = subtenants.filter((s: any) => s.mainTenantId === tenant?.id);
+        
+                if (tenant) {
+                    return {
+                        id: tenant.id,
+                        firstName: tenant.firstName,
+                        middleInitial: tenant.middleInitial || tenant.middleInitial,
+                        lastName: tenant.lastName,
+                        email: tenant.email,
+                        phoneNumber: tenant.phoneNumber,
+                        dateAdded: tenant.dateAdded,
+                        subTenants: tenantSubs,
+                        unit: u,
+                    };
+                } else {
+                    return {
+                        id: null,
+                        firstName: null,
+                        middleInitial: null,
+                        lastName: null,
+                        email: null,
+                        phoneNumber: null,
+                        dateAdded: null,
+                        subTenants: [],
+                        unit: u,
+                    } as TenantWithUnitDetails;
+                }
             });
     
             setFullTenantData(processed);
@@ -454,23 +428,6 @@ export default function TenantsManagementPage() {
             //setLoading(false);
         }
     };
-
-    // Note: We'll use the getUnitInfo function directly in the JSX
-
-    // if (isLoading) {
-    //     return (
-    //         <div className="min-h-screen flex items-center justify-center bg-gray-100">
-    //             <div className="text-center">
-    //                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-    //                 <div className="text-lg text-gray-600">Loading...</div>
-    //             </div>
-    //         </div>
-    //     );
-    // }
-
-    // if (!isLoggedIn) {
-    //     return null;
-    // }
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -590,10 +547,10 @@ export default function TenantsManagementPage() {
                                                 View
                                             </button>
                                             <button
-                                                onClick={() => handleDeleteTenant(tenant)}
+                                                onClick={() => handleMoveOut(tenant)}
                                                 className="px-4 py-2 text-yellow-300 bg-black hover:text-yellow-400 rounded-lg transition-all duration-200 text-sm font-medium border border-black hover:border-black"
                                             >
-                                                Delete
+                                                Move Out
                                             </button>
                                         </div>
                                     </div>
@@ -604,15 +561,12 @@ export default function TenantsManagementPage() {
                 </div>
             </div>
 
-            <TenantPopUp modalOpen={modalOpen}>
-                <TenantMgt 
-                    toggleModal={toggleModal} 
-                    onSubmit={editingTenant ? handleUpdateTenant : handleAddTenant}
-                    editingTenant={editingTenant}
-                    isEditing={!!editingTenant}
-                    units={units}
-                />
-            </TenantPopUp>
+            <AddTenantModal
+                open={isAddTenantModalOpen}
+                onClose={() => setIsAddTenantModalOpen(false)}
+                units={emptyUnits}
+                onSubmit={handleAddTenant}
+            />
 
             {selectedTenant && (
                 <AllInModal 
@@ -630,6 +584,14 @@ export default function TenantsManagementPage() {
                 message={`Are you sure you want to delete ${tenantToDelete ? formatName(tenantToDelete.firstName || "", tenantToDelete.lastName || "", tenantToDelete.middleInitial || "") : 'this tenant'}?`}
                 onCancel={cancelDelete}
                 onConfirm={confirmDeleteTenant}
+            />
+
+            <MoveOutModal
+                open={isMoveOutModalOpen}
+                title="Move Out Tenant"
+                message={`Are you sure you want to move out ${tenantToMoveOut?.firstName} ${tenantToMoveOut?.lastName} from ${tenantToMoveOut?.unit.name}? This action cannot be undone.`}
+                onCancel={cancelMoveOut}
+                onConfirm={() => confirmMoveOut()}
             />
                 
             {/* Error Modal */}
