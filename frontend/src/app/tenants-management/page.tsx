@@ -8,6 +8,8 @@ import { Mail, Phone, Building, DoorClosed, Users } from "lucide-react";
 import { DeleteModal } from "@/components/delete-modal";
 import { AddTenantModal } from "@/components/add-tenant";
 import { MoveOutModal } from "@/components/move-out-modal"; 
+import { AddTenantModal } from "@/components/add-tenant";
+import { MoveOutModal } from "@/components/move-out-modal"; 
 
 type SubTenant = {
     firstName: string,
@@ -142,6 +144,7 @@ export default function TenantsManagementPage() {
             (unit) => !tenants.some((tenant) => tenant.unit.id === unit.id)
         );
     };
+
     const handleAddTenantClick = () => {
         setEditingTenant(null);  
         setModalOpen(true);
@@ -151,6 +154,7 @@ export default function TenantsManagementPage() {
 
         setIsAddTenantModalOpen(true)
     };
+
     const handleAddTenant = async (formData) => {
         try {
             const tenantDataPayload = {
@@ -284,11 +288,6 @@ export default function TenantsManagementPage() {
         }
     };
 
-    const handleDeleteTenant = (tenant: TenantWithUnitDetails) => {
-        setTenantToDelete(tenant);
-        setDeleteModalOpen(true);
-    };
-
     const handleMoveOut = (tenant: TenantWithUnitDetails) => {
         console.log(tenant)
         setTenantToMoveOut(tenant)
@@ -314,28 +313,6 @@ export default function TenantsManagementPage() {
             console.log("Failed to move out tenant.", error)
         }
     }
-
-    const confirmDeleteTenant = async () => {
-        if (!tenantToDelete) return;
-
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants/${tenantToDelete.id}`, {
-            method: 'DELETE',
-            headers: { "Content-Type": "application/json" },
-        });
-
-        if (!res.ok) {
-            alert("Failed to delete tenant.");
-            return;
-        }
-
-        console.log("Tenant deleted successfully, triggering refresh...");
-        setDeleteModalOpen(false);
-        setTenantToDelete(null);
-        console.log("About to call triggerRefresh()");
-        await fetchTenants(); // Wait for data to refresh first
-        triggerRefresh(); // Then trigger refresh in other components
-        console.log("triggerRefresh() called successfully");
-    };
 
     const cancelMoveOut = () => {
         setIsMoveOutModalOpen(false);
@@ -577,14 +554,6 @@ export default function TenantsManagementPage() {
                     onUpdateTenant={handleUpdates}
                 />
             )}
-
-            <DeleteModal
-                open={deleteModalOpen}
-                title="Delete Tenant"
-                message={`Are you sure you want to delete ${tenantToDelete ? formatName(tenantToDelete.firstName || "", tenantToDelete.lastName || "", tenantToDelete.middleInitial || "") : 'this tenant'}?`}
-                onCancel={cancelDelete}
-                onConfirm={confirmDeleteTenant}
-            />
 
             <MoveOutModal
                 open={isMoveOutModalOpen}
