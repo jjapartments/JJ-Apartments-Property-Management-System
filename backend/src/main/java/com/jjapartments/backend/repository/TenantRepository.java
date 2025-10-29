@@ -1,6 +1,7 @@
 package com.jjapartments.backend.repository;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -188,5 +189,22 @@ public class TenantRepository {
         }
 
         return result;
+    }
+
+    public Tenant updateMoveOut(int id, LocalDateTime moveOutDate) {
+        Tenant tenant = findById(id);
+        if (tenant.getMoveOutDate() != null) {
+            throw new ErrorException("Tenant has already moved out.");
+        }
+
+        String sql = "UPDATE tenants SET move_out_date = ? WHERE id = ?";
+        jdbcTemplate.update(sql, moveOutDate, id);
+
+        String updateUnitSql = "UPDATE units SET active_tenant_id = NULL WHERE id = ?";
+        jdbcTemplate.update(updateUnitSql, tenant.getUnitId());
+
+        updateUnitOccupantCount(tenant.getUnitId());
+
+        return findById(id);
     }
 }
