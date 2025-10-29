@@ -19,7 +19,15 @@ public class TenantRepository {
 
     @Transactional(readOnly = true)
     public List<Tenant> findAll() {
-        String sql = "SELECT * FROM tenants";
+        String sql = """
+                SELECT * FROM tenants
+                ORDER BY 
+                    CASE WHEN move_out_date IS NULL THEN 0 ELSE 1 END,
+                    CASE 
+                        WHEN move_out_date IS NULL THEN move_in_date
+                        ELSE move_out_date
+                    END DESC
+                """;
         return jdbcTemplate.query(sql, new TenantRowMapper());
     }
 
