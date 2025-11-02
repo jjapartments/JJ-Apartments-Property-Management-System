@@ -1,24 +1,24 @@
 package com.jjapartments.backend.controllers;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import com.jjapartments.backend.models.SubTenant;
-import com.jjapartments.backend.models.Unit;
-import com.jjapartments.backend.models.Tenant;
-import com.jjapartments.backend.repository.TenantRepository;
-import com.jjapartments.backend.repository.SubTenantRepository;
-import com.jjapartments.backend.repository.UnitRepository;
 import com.jjapartments.backend.dto.TenantWithUnitDTO;
 import com.jjapartments.backend.dto.UnitTenantsDTO;
 import com.jjapartments.backend.exception.ErrorException;
+import com.jjapartments.backend.models.SubTenant;
+import com.jjapartments.backend.models.Tenant;
+import com.jjapartments.backend.models.Unit;
+import com.jjapartments.backend.repository.SubTenantRepository;
+import com.jjapartments.backend.repository.TenantRepository;
+import com.jjapartments.backend.repository.UnitRepository;
 
 @RestController
 @RequestMapping("/api/tenants")
@@ -143,15 +143,15 @@ public class TenantController {
                 return ResponseEntity.badRequest().body(Map.of("error", "move_out_date is required"));
             }
 
-            LocalDateTime moveOutDate;
+            LocalDate moveOutDate;
             try {
-                moveOutDate = LocalDateTime.parse(moveOutDateStr);
+                moveOutDate = LocalDate.parse(moveOutDateStr);
             } catch (DateTimeParseException e) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Invalid date format. Use ISO 8601 format"));
             }
 
             // Validate move-out date is not in the future
-            if (moveOutDate.isAfter(LocalDateTime.now())) {
+            if (moveOutDate.isAfter(LocalDate.now())) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Move-out date cannot be in the future"));
             }
 

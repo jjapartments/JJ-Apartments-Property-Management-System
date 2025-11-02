@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.time.LocalDateTime;
+import java.sql.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -251,11 +251,30 @@ public class TenantRepository {
         int oldUnitId = existingTenant.getUnitId();
         int newUnitId = tenant.getUnitId();
 
+        String newMoveOutDateRaw = tenant.getMoveOutDate();
+        boolean hasMoveOutPayload = newMoveOutDateRaw != null && !newMoveOutDateRaw.trim().isEmpty();
+        boolean shouldApplyMoveOut = hasMoveOutPayload && existingTenant.getMoveOutDate() == null;
+        LocalDate parsedMoveOutDate = null;
+
+        if (hasMoveOutPayload) {
+            String trimmedMoveOutDate = newMoveOutDateRaw.trim();
+            if (shouldApplyMoveOut) {
+                try {
+                    parsedMoveOutDate = LocalDate.parse(trimmedMoveOutDate, DateTimeFormatter.ISO_LOCAL_DATE);
+                } catch (DateTimeParseException e) {
+                    throw new ErrorException(
+                            "Invalid move-out date format. Expected ISO 8601 date format (e.g., 2025-10-31).");
+                }
+            } else if (!trimmedMoveOutDate.equals(existingTenant.getMoveOutDate())) {
+                throw new ErrorException("Tenant has already moved out.");
+            }
+        }
+
         if (oldUnitId != newUnitId) {
             if (!unitExists(newUnitId)) {
                 throw new ErrorException("Unit not found.");
             }
-            
+
             // check if new unit is vacant
             if (!isUnitVacant(newUnitId)) {
                 throw new ErrorException("Unit is already occupied.");
@@ -274,10 +293,10 @@ public class TenantRepository {
 
             }
         }
-        String sql = "UPDATE tenants SET last_name = ?, first_name = ?, middle_initial = ?, email = ?, phone_number = ?, messenger_link = ?, units_id = ?, move_in_date = ?, move_out_date = ? WHERE id = ?";
+        String sql = "UPDATE tenants SET last_name = ?, first_name = ?, middle_initial = ?, email = ?, phone_number = ?, messenger_link = ?, units_id = ?, move_in_date = ? WHERE id = ?";
         int result = jdbcTemplate.update(sql, tenant.getLastName(), tenant.getFirstName(), tenant.getMiddleInitial(),
                 tenant.getEmail(), tenant.getPhoneNumber(), tenant.getMessengerLink(), tenant.getUnitId(),
-                tenant.getMoveInDate(), tenant.getMoveOutDate(), id);
+                tenant.getMoveInDate(), id);
 
         // Update occupant counts for both old and new units if tenant moved
         if (result > 0) {
@@ -295,17 +314,21 @@ public class TenantRepository {
             }
         }
 
+        if (shouldApplyMoveOut && parsedMoveOutDate != null) {
+            updateMoveOut(id, parsedMoveOutDate);
+        }
+
         return result;
     }
 
-    public Tenant updateMoveOut(int id, LocalDateTime moveOutDate) {
+    public Tenant updateMoveOut(int id, LocalDate moveOutDate) {
         Tenant tenant = findById(id);
         if (tenant.getMoveOutDate() != null) {
             throw new ErrorException("Tenant has already moved out.");
         }
 
         String sql = "UPDATE tenants SET move_out_date = ? WHERE id = ?";
-        jdbcTemplate.update(sql, moveOutDate, id);
+        jdbcTemplate.update(sql, Date.valueOf(moveOutDate), id);
 
         String updateUnitSql = "UPDATE units SET active_tenant_id = NULL WHERE id = ?";
         jdbcTemplate.update(updateUnitSql, tenant.getUnitId());
