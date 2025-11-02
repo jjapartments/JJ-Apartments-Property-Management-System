@@ -9,9 +9,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import com.jjapartments.backend.models.SubTenant;
+import com.jjapartments.backend.models.Unit;
 import com.jjapartments.backend.models.Tenant;
 import com.jjapartments.backend.repository.TenantRepository;
 import com.jjapartments.backend.repository.SubTenantRepository;
+import com.jjapartments.backend.repository.UnitRepository;
+import com.jjapartments.backend.dto.TenantWithUnitDTO;
 import com.jjapartments.backend.dto.UnitTenantsDTO;
 import com.jjapartments.backend.exception.ErrorException;
 
@@ -22,20 +25,56 @@ public class TenantController {
     private TenantRepository tenantRepository;
     @Autowired
     private SubTenantRepository subTenantRepository;
+    @Autowired
+    private UnitRepository unitRepository;
 
     // Create
     @PostMapping("/add")
     public ResponseEntity<?> addTenant(@RequestBody Tenant tenant) {
         try {
             Tenant newTenant = tenantRepository.add(tenant);
-            return ResponseEntity.status(HttpStatus.CREATED).body(newTenant);
+            Unit associatedUnit = unitRepository.findById(newTenant.getUnitId());
+            TenantWithUnitDTO response = mapToTenantWithUnitDTO(newTenant, associatedUnit);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (ErrorException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+            String errorMessage = e.getMessage();
+            
+            // Determine appropriate HTTP status based on error message
+            if (errorMessage.contains("not found") || errorMessage.contains("Unit not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", errorMessage));
+            } else if (errorMessage.contains("occupied") || 
+                       errorMessage.contains("required") || 
+                       errorMessage.contains("Invalid") ||
+                       errorMessage.contains("already taken") ||
+                       errorMessage.contains("already registered")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", errorMessage));
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", errorMessage));
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", "An internal server error occurred while creating the tenant."));
         }
+    }
+
+    private TenantWithUnitDTO mapToTenantWithUnitDTO(Tenant tenant, Unit unit) {
+        TenantWithUnitDTO response = new TenantWithUnitDTO();
+        response.setId(tenant.getId());
+        response.setLastName(tenant.getLastName());
+        response.setFirstName(tenant.getFirstName());
+        response.setMiddleInitial(tenant.getMiddleInitial());
+        response.setEmail(tenant.getEmail());
+        response.setPhoneNumber(tenant.getPhoneNumber());
+        response.setMessengerLink(tenant.getMessengerLink());
+        response.setUnitId(tenant.getUnitId());
+        response.setMoveInDate(tenant.getMoveInDate());
+        response.setMoveOutDate(tenant.getMoveOutDate());
+        response.setUnit(unit);
+        return response;
     }
 
     // Get all
@@ -53,11 +92,22 @@ public class TenantController {
     // Delete
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteTenant(@PathVariable int id) {
-        int rowsAffected = tenantRepository.delete(id);
-        if (rowsAffected > 0) {
-            return ResponseEntity.ok("Tenant deleted successfully.");
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Tenant not found");
+        try {
+            int rowsAffected = tenantRepository.delete(id);
+            if (rowsAffected > 0) {
+                return ResponseEntity.ok("Tenant deleted successfully.");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Tenant not found");
+            }
+        } catch (ErrorException e) {
+            if (e.getMessage().contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An internal server error occurred while deleting the tenant.");
         }
     }
 
@@ -68,7 +118,16 @@ public class TenantController {
             tenantRepository.update(id, tenant);
             return ResponseEntity.ok(tenantRepository.findById(id));
         } catch (ErrorException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            if (e.getMessage().contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", e.getMessage()));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An internal server error occurred while updating the tenant."));
         }
     }
     
