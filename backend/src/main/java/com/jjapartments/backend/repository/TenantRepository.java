@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -22,7 +23,15 @@ public class TenantRepository {
 
     @Transactional(readOnly = true)
     public List<Tenant> findAll() {
-        String sql = "SELECT * FROM tenants ORDER BY move_in_date IS NULL, move_in_date DESC, id DESC";
+        String sql = """
+                SELECT * FROM tenants
+                ORDER BY 
+                    CASE WHEN move_out_date IS NULL THEN 0 ELSE 1 END,
+                    CASE 
+                        WHEN move_out_date IS NULL THEN move_in_date
+                        ELSE move_out_date
+                    END DESC
+                """;
         return jdbcTemplate.query(sql, new TenantRowMapper());
     }
 
@@ -287,5 +296,22 @@ public class TenantRepository {
         }
 
         return result;
+    }
+
+    public Tenant updateMoveOut(int id, LocalDateTime moveOutDate) {
+        Tenant tenant = findById(id);
+        if (tenant.getMoveOutDate() != null) {
+            throw new ErrorException("Tenant has already moved out.");
+        }
+
+        String sql = "UPDATE tenants SET move_out_date = ? WHERE id = ?";
+        jdbcTemplate.update(sql, moveOutDate, id);
+
+        String updateUnitSql = "UPDATE units SET active_tenant_id = NULL WHERE id = ?";
+        jdbcTemplate.update(updateUnitSql, tenant.getUnitId());
+
+        updateUnitOccupantCount(tenant.getUnitId());
+
+        return findById(id);
     }
 }

@@ -2,6 +2,8 @@ package com.jjapartments.backend.controllers;
 
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -131,7 +133,41 @@ public class TenantController {
         }
     }
     
-    
+    @PatchMapping("/{id}/move-out")
+    public ResponseEntity<?> moveOutTenant(
+            @PathVariable int id,
+            @RequestBody Map<String, String> payload) {
+        try {
+            String moveOutDateStr = payload.get("move_out_date");
+            if (moveOutDateStr == null || moveOutDateStr.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "move_out_date is required"));
+            }
+
+            LocalDateTime moveOutDate;
+            try {
+                moveOutDate = LocalDateTime.parse(moveOutDateStr);
+            } catch (DateTimeParseException e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid date format. Use ISO 8601 format"));
+            }
+
+            // Validate move-out date is not in the future
+            if (moveOutDate.isAfter(LocalDateTime.now())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Move-out date cannot be in the future"));
+            }
+
+            Tenant updatedTenant = tenantRepository.updateMoveOut(id, moveOutDate);
+            return ResponseEntity.ok(updatedTenant);
+        } catch (ErrorException e) {
+            if (e.getMessage().contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            }
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to process move-out: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/unit/{unitId}")
     public ResponseEntity<?> getAllTenantsForUnit(@PathVariable int unitId) {
         try {
