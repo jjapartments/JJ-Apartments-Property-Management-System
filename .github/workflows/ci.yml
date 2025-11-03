@@ -35,13 +35,6 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/.next/**
-          retention-days: 1
-
   backend-build:
     name: Backend Build & Compile
     runs-on: ubuntu-latest
