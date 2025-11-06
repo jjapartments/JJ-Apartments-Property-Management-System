@@ -42,37 +42,14 @@ export function UnitHistoryModal({ open, onClose, unit }: UnitHistoryProps) {
 
           try {
                // [TO UPDATE] :: Proper Fetch
-               //const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants?unitId=${unit.id}`);
-               //if (!res.ok) throw new Error("Error fetching tenants");
-               //const data = await res.json();
+               const res = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/tenants/moved-out/${unit.id}`
+               );
 
-               //setTenants(data);
+               if (!res.ok) throw new Error("Error fetching tenants");
+               const data = await res.json();
 
-               const dummyTenants: Tenant[] = [
-                    {
-                         id: "1",
-                         firstName: "Juan",
-                         middleInitial: "D",
-                         lastName: "Cruz",
-                         phoneNumber: "09171234567",
-                         link: "https://example.com/tenant/1",
-                         moveInDate: "2023-01-15T00:00:00Z",
-                         moveOutDate: "2024-03-20T00:00:00Z",
-                         email: "....sample"
-                    },
-                    {
-                         id: "2",
-                         firstName: "Maria",
-                         middleInitial: "L",
-                         lastName: "Santos",
-                         phoneNumber: "09987654321",
-                         link: "https://example.com/tenant/2",
-                         moveInDate: "2022-06-10T00:00:00Z",
-                         moveOutDate: "2022-12-05T00:00:00Z",
-                         email: "....sample"
-                    },
-               ];
-               setTenants(dummyTenants);
+               setTenants(data);
           } catch (err) {
                console.error(err);
           } finally {
