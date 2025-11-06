@@ -25,9 +25,9 @@ public class TenantRepository {
     public List<Tenant> findAll() {
         String sql = """
                 SELECT * FROM tenants
-                ORDER BY 
+                ORDER BY
                     CASE WHEN move_out_date IS NULL THEN 0 ELSE 1 END,
-                    CASE 
+                    CASE
                         WHEN move_out_date IS NULL THEN move_in_date
                         ELSE move_out_date
                     END DESC
@@ -79,12 +79,12 @@ public class TenantRepository {
         if (moveInDate == null) {
             throw new ErrorException("Move-in date is required.");
         }
-        
+
         String trimmedDate = moveInDate.trim();
         if (trimmedDate.isEmpty()) {
             throw new ErrorException("Move-in date is required.");
         }
-        
+
         try {
             // parse as ISO 8601 DATE string (YYYY-MM-DD)
             LocalDate.parse(trimmedDate, DateTimeFormatter.ISO_LOCAL_DATE);
@@ -153,7 +153,7 @@ public class TenantRepository {
 
         if (!unitExists(tenant.getUnitId())) {
             throw new ErrorException("Unit not found.");
-        }       
+        }
         if (!isUnitVacant(tenant.getUnitId())) {
             throw new ErrorException("Unit is already occupied.");
         }
@@ -336,5 +336,25 @@ public class TenantRepository {
         updateUnitOccupantCount(tenant.getUnitId());
 
         return findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Tenant> findAllMovedIn() {
+        String sql = """
+                SELECT * FROM tenants
+                WHERE move_out_date IS NULL
+                ORDER BY move_in_date DESC, first_name ASC, last_name ASC
+                """;
+        return jdbcTemplate.query(sql, new TenantRowMapper());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Tenant> findAllMovedOut() {
+        String sql = """
+                SELECT * FROM tenants
+                WHERE move_out_date IS NOT NULL
+                ORDER BY move_out_date DESC, first_name ASC, last_name ASC
+                """;
+        return jdbcTemplate.query(sql, new TenantRowMapper());
     }
 }
