@@ -40,16 +40,16 @@ public class TenantController {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (ErrorException e) {
             String errorMessage = e.getMessage();
-            
+
             // Determine appropriate HTTP status based on error message
             if (errorMessage.contains("not found") || errorMessage.contains("Unit not found")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", errorMessage));
-            } else if (errorMessage.contains("occupied") || 
-                       errorMessage.contains("required") || 
-                       errorMessage.contains("Invalid") ||
-                       errorMessage.contains("already taken") ||
-                       errorMessage.contains("already registered")) {
+            } else if (errorMessage.contains("occupied") ||
+                    errorMessage.contains("required") ||
+                    errorMessage.contains("Invalid") ||
+                    errorMessage.contains("already taken") ||
+                    errorMessage.contains("already registered")) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", errorMessage));
             } else {
@@ -132,7 +132,7 @@ public class TenantController {
                     .body(Map.of("error", "An internal server error occurred while updating the tenant."));
         }
     }
-    
+
     @PatchMapping("/{id}/move-out")
     public ResponseEntity<?> moveOutTenant(
             @PathVariable int id,
@@ -173,7 +173,7 @@ public class TenantController {
         try {
             List<Tenant> mainTenants = tenantRepository.findByUnitId(unitId);
             List<SubTenant> subTenants = subTenantRepository.findByUnitId(unitId);
-            
+
             UnitTenantsDTO response = new UnitTenantsDTO(mainTenants, subTenants);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -183,4 +183,27 @@ public class TenantController {
         }
     }
 
+    // Get all moved-in (active) tenants
+    @GetMapping("/moved-in")
+    public ResponseEntity<List<Tenant>> getMovedInTenants() {
+        try {
+            List<Tenant> tenants = tenantRepository.findAllMovedIn();
+            return ResponseEntity.ok(tenants);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    // Get all moved-out tenants
+    @GetMapping("/moved-out")
+    public ResponseEntity<List<Tenant>> getMovedOutTenants() {
+        try {
+            List<Tenant> tenants = tenantRepository.findAllMovedOut();
+            return ResponseEntity.ok(tenants);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }
