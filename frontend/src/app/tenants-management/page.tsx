@@ -49,6 +49,8 @@ type Unit = {
     description: string;
     max_num: number;
     price: number;
+    
+    activeTenantId: number
 };
 
 type TenantWithUnitDetails = Omit<Tenant, "unit"> & {
@@ -57,16 +59,11 @@ type TenantWithUnitDetails = Omit<Tenant, "unit"> & {
 
 export default function TenantsManagementPage() {
     const { refreshTrigger, triggerRefresh } = useDataRefresh();
-    const router = useRouter();
     const [modalOpen, setModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] =
         useState<TenantWithUnitDetails | null>(null);
     const [tenants, setTenants] = useState<TenantWithUnitDetails[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
-
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [tenantToDelete, setTenantToDelete] =
-        useState<TenantWithUnitDetails | null>(null);
 
     const [errorModalOpen, setErrorModalOpen] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string>("");
@@ -89,6 +86,11 @@ export default function TenantsManagementPage() {
     const [isMoveOutModalOpen, setIsMoveOutModalOpen] = useState(false);
     const [tenantToMoveOut, setTenantToMoveOut] =
         useState<TenantWithUnitDetails | null>(null);
+    const [moveOutError, setMoveOutError] = useState<string>("");
+
+    const [tenantFilter, setTenantFilter] = useState<"active" | "movedOut">("active");
+
+    // ================== //
 
     useEffect(() => {
         fetchUnits();
@@ -98,6 +100,20 @@ export default function TenantsManagementPage() {
             fetchTenants();
         }
     }, [units]);
+
+    useEffect(() => {
+        if (tenants.length === 0) return;
+
+        const id = localStorage.getItem("scrollToTenantId");
+        if (!id) return;
+
+        const el = document.getElementById(`tenant-${id}`);
+        if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        localStorage.removeItem("scrollToTenantId");
+    }, [tenants]);
 
     const fetchUnits = async () => {
         try {
@@ -170,9 +186,7 @@ export default function TenantsManagementPage() {
     };
 
     const getEmptyUnits = () => {
-        return units.filter(
-            (unit) => !tenants.some((tenant) => tenant.unit.id === unit.id)
-        );
+        return units.filter((unit) => unit.activeTenantId == 0);
     };
 
     const handleAddTenantClick = () => {
@@ -273,29 +287,34 @@ export default function TenantsManagementPage() {
         setIsMoveOutModalOpen(true);
     };
     const confirmMoveOut = async (moveOutDate: string) => {
-        setIsMoveOutModalOpen(false);
+        setMoveOutError(""); 
 
         try {
-            const formattedMoveOutDate = new Date(moveOutDate).toISOString();
+            const formattedMoveOutDate = moveOutDate
+
+            if (!tenantToMoveOut?.id) {
+                alert("Tenant ID not found.");
+                return;
+            }
 
             // [TO UPDATE] :: Replace with your actual API endpoint
-            /*const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/tenants/moveout`,
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/tenants/${tenantToMoveOut.id}/move-out`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        tenantId: tenant.id,
-                        moveOutDate: formattedMoveOutDate,
+                        move_out_date: formattedMoveOutDate,
                     }),
                 }
             );
 
             if (!res.ok) {
-                throw new Error("Failed to update tenant move-out date.");
-            }*/
+                const err = await res.json().catch(() => null);
+                throw new Error(err?.error || "Failed to update tenant move-out date.");
+            }
 
             const formattedDisplayDate = new Date(
                 moveOutDate
@@ -306,16 +325,20 @@ export default function TenantsManagementPage() {
             });
 
             alert(`Tenant has moved out on ${formattedDisplayDate}.`);
-            console.log("✅ Move out confirmed:", formattedMoveOutDate);
+            console.log("Move out confirmed:", formattedMoveOutDate);
 
+            localStorage.setItem("scrollToTenantId", tenantToMoveOut.id.toString());
+
+            setIsMoveOutModalOpen(false);
             window.location.reload();
         } catch (error: any) {
-            console.error("❌ Failed to move out tenant:", error);
             alert("Failed to move out tenant. Please try again.");
+            setMoveOutError(error.message); 
         }
     };
 
     const cancelMoveOut = () => {
+        setMoveOutError("")
         setIsMoveOutModalOpen(false);
     };
 
@@ -460,6 +483,38 @@ export default function TenantsManagementPage() {
                 </div>
             </header>
 
+            <div className="flex justify-center mt-6">
+                <div className="flex w-100 gap-5 p-3 pl-8 pr-8 rounded-lg bg-white border border-gray-300 p-1">
+                    <button
+                        className={`
+                            flex-1 px-4 py-2 rounded-lg text-sm font-medium transition
+                            ${
+                                tenantFilter === "active"
+                                    ? "bg-yellow-400 text-black"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }
+                        `}
+                        onClick={() => setTenantFilter("active")}
+                    >
+                        Active
+                    </button>
+
+                    <button
+                        className={`
+                            flex-1 px-4 py-2 rounded-lg text-sm font-medium transition
+                            ${
+                                tenantFilter === "movedOut"
+                                    ? "bg-yellow-400 text-black"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }
+                        `}
+                        onClick={() => setTenantFilter("movedOut")}
+                    >
+                        Moved Out
+                    </button>
+                </div>
+            </div>
+
             <div className="px-6 py-6">
                 <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                     {tenants.length === 0 ? (
@@ -482,9 +537,18 @@ export default function TenantsManagementPage() {
                         <div className="divide-y divide-gray-100">
                             {tenants
                                 .filter((tenant) =>
-                                    `${tenant.firstName} ${
-                                        tenant.middleInitial || ""
-                                    } ${tenant.lastName}`
+                                    tenantFilter === "active"
+                                        ? !tenant.moveOutDate
+                                        : tenant.moveOutDate
+                                )
+                                .sort((a, b) => {
+                                    if (tenantFilter === "movedOut") {
+                                        return new Date(b.moveOutDate!).getTime() - new Date(a.moveOutDate!).getTime();
+                                    }
+                                    return 0;
+                                })
+                                .filter((tenant) =>
+                                    `${tenant.firstName} ${tenant.middleInitial || ""} ${tenant.lastName}`
                                         .toLowerCase()
                                         .includes(searchQuery.toLowerCase())
                                 )
@@ -585,7 +649,7 @@ export default function TenantsManagementPage() {
 
                                                 <div className="mt-3 flex flex-wrap justify-between w-full gap-4">
                                                     {/* Left: Contact Info */}
-                                                    <div className="flex flex-col justify-center gap-2 bg-gray-50 rounded-lg p-4 flex-1 min-w-[300px]">
+                                                    <div className="flex flex-col items-start gap-2 bg-gray-50 rounded-lg p-4 flex-1 min-w-[300px]">
                                                         <div className="flex items-center space-x-2">
                                                             <Mail className="w-4 h-4 text-gray-500" />
                                                             <span className="font-medium text-gray-700">
@@ -749,6 +813,7 @@ export default function TenantsManagementPage() {
                 message={`Are you sure you want to move out ${tenantToMoveOut?.firstName} ${tenantToMoveOut?.lastName} from ${tenantToMoveOut?.unit.name}? This action cannot be undone.`}
                 onCancel={cancelMoveOut}
                 onConfirm={(date) => confirmMoveOut(date)}
+                error={moveOutError}
             />
 
             {/* Error Modal */}

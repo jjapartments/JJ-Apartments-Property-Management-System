@@ -111,7 +111,6 @@ export function AddTenantModal({
         if (!formData.unitId.trim()) newErrors.unitId = "Unit is required.";
 
         setErrors(newErrors);
-
         console.log(newErrors);
 
         if (Object.keys(newErrors).length > 0) return;

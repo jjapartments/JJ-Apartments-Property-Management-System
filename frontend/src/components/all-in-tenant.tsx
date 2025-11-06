@@ -57,6 +57,18 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
         }
     }, [tenant]);
 
+    useEffect(() => {
+        const id = localStorage.getItem("scrollTenantId");
+        if (!id) return;
+
+        const el = document.getElementById(`tenant-${id}`);
+        if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        localStorage.removeItem("scrollTenantId");
+    }, []);
+
     const handleCancel = () => {
         setIsEditing(false);
         setErrors({});
@@ -174,32 +186,38 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
 
     const cancelMoveOut = () => {
         setIsMoveOutModalOpen(false);
+        setErrors({});
     };
 
     const confirmMoveOut = async (moveOutDate: string) => {
-        setIsMoveOutModalOpen(false);
-
         try {
-            const formattedMoveOutDate = new Date(moveOutDate).toISOString();
+            const formattedMoveOutDate = moveOutDate
 
             // [TO UPDATE] :: Replace with your actual API endpoint
-            /*const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/tenants/moveout`,
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/tenants/${tenant.id}/move-out`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        tenantId: tenant.id,
-                        moveOutDate: formattedMoveOutDate,
+                        move_out_date: formattedMoveOutDate,
                     }),
                 }
             );
 
+            let data: any = {};
+            try {
+                data = await res.json();
+            } catch {
+                data = {};
+            }
+
             if (!res.ok) {
-                throw new Error("Failed to update tenant move-out date.");
-            }*/
+                const backendMsg = data?.message || data?.error || "Failed to update tenant.";
+                throw new Error(backendMsg);
+            }
 
             const formattedDisplayDate = new Date(
                 moveOutDate
@@ -209,12 +227,17 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
                 day: "numeric",
             });
 
+            setErrors({});
             alert(`Tenant has moved out on ${formattedDisplayDate}.`);
-            console.log("✅ Move out confirmed:", formattedMoveOutDate);
+            console.log("Move out confirmed:", formattedMoveOutDate);
 
+            localStorage.setItem("scrollTenantId", tenant.id.toString());
+
+            setIsMoveOutModalOpen(false);
             window.location.reload();
         } catch (error: any) {
-            const message = error?.message || "Failed to update tenant.";
+            const message = error?.message || "Failed to move out tenant.";
+            alert("Failed to move out tenant. Please try again.");
             setErrors({ submit: message });
         }
     };
@@ -368,6 +391,7 @@ export function TenantDetails({ tenant, isCurrEditing }: TenantDetailsProps) {
                     message={`Are you sure you want to move out ${tenant.firstName} ${tenant.lastName} from ${tenant.unit.name}? This action cannot be undone.`}
                     onCancel={cancelMoveOut}
                     onConfirm={(date) => confirmMoveOut(date)}
+                    error={errors.submit}
                 />
             </div>
         </div>
