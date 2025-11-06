@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Home, User, Users } from "lucide-react";
 import { TenantDetails } from "@/components/all-in-tenant";
 import { ApartmentDetails } from "./all-in-apartment";
@@ -11,8 +10,8 @@ import { SubTenantDetails } from "./all-in-subtenants";
 interface AllInModalProps {
 	open: boolean
 	selectedTab: String
-	onClose: () => void
 	tenant: any; 
+	onClose: () => void
 	onUpdateTenant?: (updatedData: any) => Promise<void> | void;
 }
 
@@ -20,7 +19,6 @@ export function AllInModal({ open, selectedTab, onClose, tenant, onUpdateTenant 
 	const [activeTab, setActiveTab] = useState<"apartment" | "tenant" | "subtenants">(
 		selectedTab as "apartment" | "tenant" | "subtenants"
 	);
-	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
 
 	const renderTabContent = () => {
@@ -29,7 +27,6 @@ export function AllInModal({ open, selectedTab, onClose, tenant, onUpdateTenant 
 				return 	<TenantDetails 
 							tenant={tenant} 
 							isCurrEditing={setIsEditing} 
-							onSubmit={onUpdateTenant}
 						/>;
 			case "apartment":
 				return 	<ApartmentDetails 
@@ -109,10 +106,10 @@ export function AllInModal({ open, selectedTab, onClose, tenant, onUpdateTenant 
 
 					<DialogDescription className="text-sm text-muted-foreground">
 						{activeTab === "apartment"
-							? "View apartment details"
+							? "View apartment details."
 							: activeTab === "tenant"
-							? "View tenant information"
-							: "View sub-tenant information"}
+							? "View tenant information."
+							: "View sub-tenant information."}
 					</DialogDescription>
 
 					{/* Divider */}

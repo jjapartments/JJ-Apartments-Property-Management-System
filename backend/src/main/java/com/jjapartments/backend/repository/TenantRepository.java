@@ -357,4 +357,16 @@ public class TenantRepository {
                 """;
         return jdbcTemplate.query(sql, new TenantRowMapper());
     }
+
+    @Transactional(readOnly = true)
+    public List<Tenant> findAllMovedOutByUnitId(int unitId) {
+        String sql = """
+            SELECT * FROM tenants
+            WHERE units_id = ?
+            AND move_out_date IS NOT NULL
+            ORDER BY move_out_date DESC
+        """;
+
+        return jdbcTemplate.query(sql, new TenantRowMapper(), unitId);
+    }
 }

@@ -206,4 +206,9 @@ public class TenantController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+    @GetMapping("/moved-out/{unitId}")
+    public List<Tenant> getMovedOutByUnit(@PathVariable int unitId) {
+        return tenantRepository.findAllMovedOutByUnitId(unitId);
+    }
 }
