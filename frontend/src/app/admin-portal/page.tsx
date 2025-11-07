@@ -5,21 +5,20 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 
-export default function Home() {
-  const router = useRouter();
+export default function AdminPortalRoot() {
   const { isLoggedIn, isLoading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     if (!isLoading) {
       if (isLoggedIn) {
         router.replace('/admin-portal/dashboard');
       } else {
-        router.replace('/requests');
+        router.replace('/admin-portal/login');
       }
     }
-  }, [isLoggedIn, isLoading, router]);
+  }, [isLoading, isLoggedIn, router]);
 
-  // Show loading while checking auth status
   return (
     <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin" />
