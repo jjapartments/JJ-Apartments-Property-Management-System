@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
 
   const pathname = usePathname();
-  const authPages = ['/admin-portal/login', '/admin-portal/signup', '/admin-portal/forgot-password', '/admin-portal/requests', '/admin-portal/'];
+  const authPages = ['/admin-portal/login', '/admin-portal/signup', '/admin-portal/forgot-password', '/admin-portal', '/requests'];
   const isAuthPage = authPages.includes(pathname);
 
   if (isAuthPage) {

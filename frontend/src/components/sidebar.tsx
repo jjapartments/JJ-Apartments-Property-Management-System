@@ -64,8 +64,8 @@ export default function Sidebar() {
                 <Image 
                     src="/logo-no-bg.png" 
                     alt="JJ Apartments Logo" 
-                    width={80}
-                    height={80}
+                    width={75}
+                    height={75}
                     className="object-contain"
                     priority
                 />
