@@ -117,7 +117,7 @@ export default function SignUpPage() {
       }
 
       alert('Account created successfully! You can now log in.');
-      router.replace('/login');
+      router.replace('/admin-portal/login');
     } catch (err) {
       console.error('Sign-up error:', err);
       setError(err instanceof Error ? err.message : 'Failed to sign up. Please try again.');
@@ -233,7 +233,7 @@ export default function SignUpPage() {
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <a href="/login" className="text-yellow-500 hover:text-yellow-600">
+              <a href="/admin-portal/login" className="text-yellow-500 hover:text-yellow-600">
                 Sign in here
               </a>
             </p>

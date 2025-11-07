@@ -32,7 +32,7 @@ export const useAuth = (): AuthContextType => {
   const logout = () => {
     localStorage.removeItem('username');
     setUser(null);
-    router.push('/login');
+    router.push('/admin-portal/login');
   };
 
   return { user, login, logout, isLoading };
@@ -48,7 +48,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/login');
+      router.push('/admin-portal/login');
     }
   }, [user, isLoading, router]);
 

@@ -29,7 +29,7 @@ export default function FinancialOverview() {
 
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
-      router.replace('/login');
+      router.replace('/admin-portal/login');
     }
   }, [isLoggedIn, isLoading, router]);
 

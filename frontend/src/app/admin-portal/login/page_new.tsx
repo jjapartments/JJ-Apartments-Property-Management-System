@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,11 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isLoggedIn, isLoading: authLoading, login } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -20,42 +18,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Check if user is already logged in
-  useEffect(() => {
-    if (!authLoading && isLoggedIn) {
-      router.replace('/');
-    }
-  }, [isLoggedIn, authLoading, router]);
-
-  // Handle browser back button to ensure proper navigation flow
-  useEffect(() => {
-    const handlePopState = () => {
-      if (isLoggedIn) {
-        router.replace('/');
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [isLoggedIn, router]);
-
-  // Show loading while auth is being checked
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  // Don't render if user is logged in (prevents flash)
-  if (isLoggedIn) {
-    return null;
-  }
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;          
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -63,17 +25,6 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    // Basic client-side validation
-    if (!formData.username.trim()) {
-      setError('Please enter your username.');
-      return;
-    }
-    
-    if (!formData.password.trim()) {
-      setError('Please enter your password.');
-      return;
-    }
 
     setIsLoading(true);
     setError('');
@@ -112,8 +63,11 @@ export default function LoginPage() {
 
       const user = await response.json();
       
-      // Use the login function from useAuth for proper history management
-      login(user.username);
+      // Store username in localStorage
+      localStorage.setItem('username', user.username);
+      
+      // Redirect to home page
+      router.push('/');
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Failed to log in. Please check your credentials and try again.');
@@ -229,7 +183,7 @@ export default function LoginPage() {
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
               Don&apos;t have an account?{' '}
-              <a href="/signup" className="text-yellow-500 hover:text-yellow-600">
+              <a href="/admin-portal/signup" className="text-yellow-500 hover:text-yellow-600">
                 Sign up here
               </a>
             </p>

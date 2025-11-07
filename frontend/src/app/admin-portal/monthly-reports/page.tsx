@@ -2,34 +2,28 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { ApartmentList } from '@/components/apartment-list';
+
+import ReportsList from '@/components/reports-list';
 
 
-
-const MainContent = () => {
-  return (
-    <div className="flex-1 flex flex-col min-h-screen">
-      <header className="bg-white shadow-sm border-b p-2 ">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">Apartment Overview</h1>
-        </div>
-      </header>
-
-      
-      <div className="flex flex-1">
-        <ApartmentList />
+const MainContent = () => (
+  <div className="flex-1 flex flex-col min-h-screen">
+    <header className="bg-white shadow-sm border-b p-4">
+      <div className="flex items-center gap-4">
+        <h1 className="text-2xl font-bold text-gray-900">Monthly Reports</h1>
       </div>
-    </div>
-  );
-};
+    </header>
+    {<ReportsList />}
+  </div>
+);
 
-export default function ApartmentOverview() {
+export default function FinancialOverview() {
   const { isLoggedIn, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
-      router.replace('/login');
+      router.replace('/admin-portal/login');
     }
   }, [isLoggedIn, isLoading, router]);
 
@@ -53,5 +47,4 @@ export default function ApartmentOverview() {
       <MainContent />
     </div>
   );
-};
-
+}

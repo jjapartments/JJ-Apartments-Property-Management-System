@@ -8,7 +8,8 @@ import {
   Users, 
   DollarSign,
   LogOut,
-  BanknoteArrowUpIcon
+  BanknoteArrowUpIcon,
+  Ticket
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,28 +22,33 @@ export default function Sidebar() {
   const menuItems = [
     {
       name: 'Dashboard',
-      href: '/',
+      href: '/admin-portal/dashboard',
       icon: Home,
     },
     {
       name: 'Apartments',
-      href: '/apartment-overview',
+      href: '/admin-portal/apartment-overview',
       icon: Building2,
     },
     {
       name: 'Tenants',
-      href: '/tenants-management',
+      href: '/admin-portal/tenants-management',
       icon: Users,
     },
     {
       name: 'Financial',
-      href: '/financial-tracking',
+      href: '/admin-portal/financial-tracking',
       icon: DollarSign,
     },
     {
       name: 'Monthly Reports',
-      href: '/monthly-reports',
+      href: '/admin-portal/monthly-reports',
       icon: BanknoteArrowUpIcon,
+    },
+    {
+      name: 'Request Tickets',
+      href: '/admin-portal/request-tickets',
+      icon: Ticket,
     },
   ];
 
@@ -58,8 +64,8 @@ export default function Sidebar() {
                 <Image 
                     src="/logo-no-bg.png" 
                     alt="JJ Apartments Logo" 
-                    width={125}
-                    height={125}
+                    width={80}
+                    height={80}
                     className="object-contain"
                     priority
                 />

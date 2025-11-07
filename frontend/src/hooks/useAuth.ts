@@ -40,14 +40,14 @@ export function useAuth() {
       
       // Clear the browser history to prevent back navigation to authenticated pages
       // This replaces the entire history stack with just the login page
-      window.history.replaceState(null, '', '/login');
+      window.history.replaceState(null, '', '/admin-portal/login');
       
       // Use replace instead of push to prevent back navigation issues
-      router.replace('/login');
+      router.replace('/admin-portal/login');
     } catch (error) {
       console.error('Error during logout:', error);
       // Force navigation even if localStorage fails
-      router.replace('/login');
+      router.replace('/admin-portal/login');
     }
   };
 
@@ -60,14 +60,14 @@ export function useAuth() {
       
       // Clear the browser history to prevent back navigation to login/signup pages
       // This replaces the entire history stack with just the home page
-      window.history.replaceState(null, '', '/');
+      window.history.replaceState(null, '', '/admin-portal/dashboard');
       
       // Use replace instead of push to prevent back navigation issues
-      router.replace('/');
+      router.replace('/admin-portal/dashboard');
     } catch (error) {
       console.error('Error during login:', error);
       // Force navigation even if localStorage fails
-      router.replace('/');
+      router.replace('/admin-portal/dashboard');
     }
   };
 

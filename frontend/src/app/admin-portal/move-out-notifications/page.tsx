@@ -1,29 +1,36 @@
+
+
 "use client";
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
-import ReportsList from '@/components/reports-list';
+const MainContent = () => {
+  return (
+    <div className="flex-1 flex flex-col min-h-screen">
+      <header className="bg-white shadow-sm border-b p-2 ">
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-gray-900">Move-Out Notifications</h1>
+        </div>
+      </header>
 
-
-const MainContent = () => (
-  <div className="flex-1 flex flex-col min-h-screen">
-    <header className="bg-white shadow-sm border-b p-4">
-      <div className="flex items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">Monthly Reports</h1>
+      
+      <div className="flex flex-1">
+        <div className="p-6">
+          <p className="text-gray-600">Move-out notifications functionality coming soon...</p>
+        </div>
       </div>
-    </header>
-    {<ReportsList />}
-  </div>
-);
+    </div>
+  );
+};
 
-export default function FinancialOverview() {
+export default function MoveOutPage() {
   const { isLoggedIn, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && !isLoggedIn) {
-      router.replace('/login');
+      router.replace('/admin-portal/login');
     }
   }, [isLoggedIn, isLoading, router]);
 
