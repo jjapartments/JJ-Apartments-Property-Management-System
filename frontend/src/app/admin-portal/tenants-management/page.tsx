@@ -118,7 +118,7 @@ export default function TenantsManagementPage() {
 
     const fetchUnits = async () => {
         try {
-            const data = await api.get("api/units")
+            const data = await api.get("/api/units")
             setUnits(data);
             console.log("Units loaded:", data);
         } catch (error) {
@@ -128,11 +128,11 @@ export default function TenantsManagementPage() {
     const fetchTenants = async () => {
         try {
             const [units, tenants] = await Promise.all([
-                api.get("api/units"),
-                api.get("api/tenants"),
+                api.get("/api/units"),
+                api.get("/api/tenants"),
             ]);
 
-            const subtenants = await api.get("api/subtenants");
+            const subtenants = await api.get("/api/subtenants");
 
             const processedTenants = tenants.map((t) => {
                 const unitInfo = units.find((u) => u.id === t.unitId);
