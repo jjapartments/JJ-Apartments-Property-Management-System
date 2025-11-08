@@ -13,6 +13,7 @@ import FilterModal from './filter-modal';
 import { DeleteModal } from './delete-modal';
 import { SlidersHorizontal } from 'lucide-react';
 import { ErrorModal } from './error-modal';
+import { api, ApiError } from '@/lib/api';
 
 export type Expense = {
     id: number,
@@ -69,22 +70,20 @@ export default function ExpensesList() {
   
   const confirmDelete = async (id: number) => {
     setShowConfirm(false);
+
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/expenses/${id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!res.ok) {
-        throw new Error(`Delete failed with status ${res.status}`);
-      }
+      await api.delete(`/api/expenses/${id}`);
       console.log("Expense deleted successfully");
-
       setExpenses(prev => prev.filter(expense => expense.id !== id));
-
-    } catch (error: any) {
-        console.error("Error deleting expense:", error);
-        setError(error.message || "Error deleting expense");
+    } catch (error: unknown) {
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : error instanceof Error
+          ? error.message
+          : "Error deleting expense";
+      console.error("Error deleting expense:", error);
+      setError(message);
     }
   };
 
@@ -92,59 +91,58 @@ export default function ExpensesList() {
     setShowConfirm(false);
   };
 
-  
-  
   const handleSave = async (updated: Expense) => {
-      const body = updated
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/expenses/update/${updated.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-  
-        if (!res.ok) {
-          throw new Error(`Update failed with status ${res.status}`);
-        }
-  
-        console.log("Expense updated successfully");
-        const saved = await res.json();
-        setExpenses(prev => prev.map(expense => expense.id === updated.id ? saved : expense))
-      } catch (error: any) {
-        console.error("Error updating expense:", error);
-        setError(error.message || "Error updating expense");
-      }
-  
+    try {
+      const saved = await api.patch<Expense>(
+        `/api/expenses/update/${updated.id}`,
+        updated
+      );
+      console.log("Expense updated successfully");
+      setExpenses(prev =>
+        prev.map(expense => (expense.id === updated.id ? saved : expense))
+      );
+    } catch (error: unknown) {
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : error instanceof Error
+          ? error.message
+          : "Error updating expense";
+      console.error("Error updating expense:", error);
+      setError(message);
     }
+  };
+
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
         setLoading(true);
         setError(null);
-        const [expensesRes, unitsRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/expenses`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units`)
-        ])
-
-        if (!expensesRes.ok) throw new Error(`Expenses API error: ${expensesRes.status}`);
-        if (!unitsRes.ok) throw new Error(`Units API error: ${unitsRes.status}`);
 
         const [expensesData, unitsData] = await Promise.all([
-            expensesRes.json(),
-            unitsRes.json()
-        ])
+          api.get<Expense[]>("/api/expenses"),
+          api.get<Unit[]>("/api/units"),
+        ]);
 
         setExpenses(expensesData);
         setUnits(unitsData);
-      } catch (error: any) {
-        console.error('Error fetching data:', error);
-        setError(error.message || 'Failed to fetch data');
+      } catch (error: unknown) {
+        const message =
+          error instanceof ApiError
+            ? error.message
+            : error instanceof Error
+            ? error.message
+            : "Failed to fetch data";
+        console.error("Error fetching data:", error);
+        setError(message);
       } finally {
         setLoading(false);
       }
     };
+
     fetchExpenses();
   }, []);
+
 
   const unitMap = useMemo(() => {
     const map = new Map<number, string>();

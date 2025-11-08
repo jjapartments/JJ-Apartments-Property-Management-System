@@ -24,7 +24,7 @@ export default function SignUpPage() {
   // Check if user is already logged in
   useEffect(() => {
     if (!authLoading && isLoggedIn) {
-      router.replace('/');
+      router.replace('/admin-portal/dashboard');
     }
   }, [isLoggedIn, authLoading, router]);
 
@@ -32,7 +32,7 @@ export default function SignUpPage() {
   useEffect(() => {
     const handlePopState = () => {
       if (isLoggedIn) {
-        router.replace('/');
+        router.replace('/admin-portal/dashboard');
       }
     };
 
@@ -219,17 +219,36 @@ export default function SignUpPage() {
               <Label htmlFor="registrationKey" className="text-sm font-medium text-gray-700">
                 Registration Key
               </Label>
-              <Input
-                id="registrationKey"
-                name="registrationKey"
-                type="text"
-                placeholder="Enter registration key"
-                value={formData.registrationKey}
-                disabled={isLoading}
-                onChange={handleChange}
-                className="w-full h-12 px-4 border-gray-300 focus:border-yellow-400 focus:ring-yellow-400"
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="registrationKey"
+                  name="registrationKey"
+                  type={showPassword ? 'text' : 'password'} // same toggle as password
+                  placeholder="Enter registration key"
+                  value={formData.registrationKey}
+                  disabled={isLoading}
+                  onChange={handleChange}
+                  className="w-full h-12 px-4 pr-12 border-gray-300 focus:border-yellow-400 focus:ring-yellow-400"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  )}
+                  <span className="sr-only">
+                    {showPassword ? 'Hide registration key' : 'Show registration key'}
+                  </span>
+                </Button>
+              </div>
             </div>
 
             <Button 

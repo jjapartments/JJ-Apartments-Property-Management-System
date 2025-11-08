@@ -5,6 +5,7 @@ import { InputField } from "@/components/ui/input";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useDataRefresh } from "@/contexts/DataContext";
+import { api, ApiError } from "@/lib/api";
 
 interface ApartmentDetails {
     unit: any;
@@ -85,19 +86,7 @@ export function ApartmentDetails({
         };
 
         try {
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/units/update/${unit.id}`,
-                {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(body),
-                }
-            );
-
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err?.error || "Failed to update unit record.");
-            }
+            const updatedUnit = await api.patch(`/api/units/update/${unit.id}`, body);
 
             console.log("Unit updated successfully");
             setIsEditing(false);
@@ -110,14 +99,21 @@ export function ApartmentDetails({
             triggerRefresh?.();
 
             if (onSubmit) {
-                onSubmit(null);
+            onSubmit(null);
             }
-        } catch (error: any) {
-            setErrors({
-                general: error.message || "Failed to update unit record.",
-            });
+        } catch (error: unknown) {
+            const displayMessage =
+            error instanceof ApiError
+                ? error.message
+                : error instanceof Error
+                ? error.message
+                : "Failed to update unit record";
+
+            console.error("Update unit error:", error);
+            setErrors({ general: displayMessage });
         }
-    };
+        };
+
 
     const handleChange = (field: string, value: string) => {
         setErrors({});

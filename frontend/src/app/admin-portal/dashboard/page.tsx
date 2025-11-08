@@ -1,5 +1,6 @@
 'use client';
 
+import { api } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -139,73 +140,14 @@ export default function Home() {
       try {
         setLoading(true);
         setError(null);
-        
-        const [monthlyResponse, tenantsResponse, unitsResponse, paymentsResponse, utilitiesResponse, expensesResponse] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/monthlyreports`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/utilities`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/expenses`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          })
-        ]);
-
-
-        if (!monthlyResponse.ok) {
-          throw new Error(`Monthly reports API error: ${monthlyResponse.status}`);
-        }
-        if (!tenantsResponse.ok) {
-          throw new Error(`Tenants API error: ${tenantsResponse.status}`);
-        }
-        if (!unitsResponse.ok) {
-          throw new Error(`Units API error: ${unitsResponse.status}`);
-        }
-        if (!paymentsResponse.ok) {
-          throw new Error(`Payments API error: ${paymentsResponse.status}`);
-        }
-        if (!utilitiesResponse.ok) {
-          throw new Error(`Utilities API error: ${utilitiesResponse.status}`);
-        }
-        if (!expensesResponse.ok) {
-          throw new Error(`Expenses API error: ${expensesResponse.status}`);
-        }
 
         const [monthlyData, tenantsData, unitsData, paymentsData, utilitiesData, expensesData] = await Promise.all([
-          monthlyResponse.json(),
-          tenantsResponse.json(),
-          unitsResponse.json(),
-          paymentsResponse.json(),
-          utilitiesResponse.json(),
-          expensesResponse.json()
+          api.get('/api/monthlyreports'),
+          api.get('/api/tenants'),
+          api.get('/api/units'),
+          api.get('/api/payments'),
+          api.get('/api/utilities'),
+          api.get('/api/expenses'),
         ]);
 
         setMonthlyReports(monthlyData);

@@ -16,6 +16,7 @@ import {
 import { DeleteModal } from "@/components/delete-modal";
 import { AddTenantModal } from "@/components/add-tenant";
 import { MoveOutModal } from "@/components/move-out-modal";
+import { api, ApiError } from "@/lib/api";
 
 type SubTenant = {
     firstName: string;
@@ -117,13 +118,7 @@ export default function TenantsManagementPage() {
 
     const fetchUnits = async () => {
         try {
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/units`
-            );
-            if (!response.ok) {
-                throw new Error("Failed to fetch units");
-            }
-            const data = await response.json();
+            const data = await api.get("/api/units")
             setUnits(data);
             console.log("Units loaded:", data);
         } catch (error) {
@@ -132,18 +127,12 @@ export default function TenantsManagementPage() {
     };
     const fetchTenants = async () => {
         try {
-            const [unitsResponse, tenantsResponse] = await Promise.all([
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units`),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants`),
+            const [units, tenants] = await Promise.all([
+                api.get("/api/units"),
+                api.get("/api/tenants"),
             ]);
 
-            const units = await unitsResponse.json();
-            const tenants = await tenantsResponse.json();
-
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/subtenants`
-            );
-            const subtenants = await response.json();
+            const subtenants = await api.get("/api/subtenants");
 
             const processedTenants = tenants.map((t) => {
                 const unitInfo = units.find((u) => u.id === t.unitId);
@@ -212,58 +201,37 @@ export default function TenantsManagementPage() {
             };
             console.log("Add tenant payload:", tenantDataPayload);
 
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/tenants/add`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(tenantDataPayload),
-                }
-            );
+            // Use API helper to include token automatically
+            await api.post("/api/tenants/add", tenantDataPayload);
 
-            if (!res.ok) {
-                const errorData = await res
-                    .json()
-                    .catch(() => ({ message: "Unknown error" }));
-
-                // Handle specific error messages from backend
-                let displayMessage = "Failed to add tenant. Please try again.";
-                if (errorData.error && typeof errorData.error === "string") {
-                    if (errorData.error.includes("email is already taken")) {
-                        displayMessage =
-                            "This email address is already registered with another tenant. Please use a different email address.";
-                    } else if (
-                        errorData.error.includes(
-                            "phone number is already taken"
-                        )
-                    ) {
-                        displayMessage =
-                            "This phone number is already registered with another tenant. Please use a different phone number.";
-                    } else if (
-                        errorData.error.includes("tenant is already registered")
-                    ) {
-                        displayMessage =
-                            "This tenant is already registered in the system.";
-                    } else {
-                        displayMessage = errorData.error;
-                    }
-                }
-
-                setErrorMessage(displayMessage);
-                setErrorModalOpen(true);
-                return;
-            }
-            
+            // Success — reload page
             window.location.reload();
-        } catch (error) {
+            } catch (error: unknown) {
             console.error("Error adding tenant:", error);
-            setErrorMessage(
-                "An unexpected error occurred while adding the tenant. Please try again."
-            );
+
+            // Map backend error strings to user-friendly messages
+            const errorMap: Record<string, string> = {
+                "email is already taken":
+                "This email address is already registered with another tenant. Please use a different email address.",
+                "phone number is already taken":
+                "This phone number is already registered with another tenant. Please use a different phone number.",
+                "tenant is already registered":
+                "This tenant is already registered in the system.",
+            };
+
+            let displayMessage = "Failed to add tenant. Please try again.";
+
+            if (error instanceof ApiError && typeof error.message === "string") {
+                const mappedMessage = Object.entries(errorMap).find(([key]) =>
+                error.message.includes(key)
+                )?.[1];
+                displayMessage = mappedMessage || error.message || displayMessage;
+            }
+
+            setErrorMessage(displayMessage);
             setErrorModalOpen(true);
-        }
+            }
+
     };
 
     const handleViewTenant = (tenant: TenantWithUnitDetails) => {
@@ -290,31 +258,15 @@ export default function TenantsManagementPage() {
         setMoveOutError(""); 
 
         try {
-            const formattedMoveOutDate = moveOutDate
-
             if (!tenantToMoveOut?.id) {
                 alert("Tenant ID not found.");
                 return;
             }
+            const formattedMoveOutDate = moveOutDate
 
-            // [TO UPDATE] :: Replace with your actual API endpoint
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/tenants/${tenantToMoveOut.id}/move-out`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        move_out_date: formattedMoveOutDate,
-                    }),
-                }
-            );
-
-            if (!res.ok) {
-                const err = await res.json().catch(() => null);
-                throw new Error(err?.error || "Failed to update tenant move-out date.");
-            }
+            await api.patch(`/api/tenants/${tenantToMoveOut.id}/move-out`, {
+                move_out_date: formattedMoveOutDate,
+            });
 
             const formattedDisplayDate = new Date(
                 moveOutDate
@@ -331,9 +283,16 @@ export default function TenantsManagementPage() {
 
             setIsMoveOutModalOpen(false);
             window.location.reload();
-        } catch (error: any) {
-            alert("Failed to move out tenant. Please try again.");
-            setMoveOutError(error.message); 
+        } catch (error: unknown) {
+            console.error("Failed to move out tenant:", error);
+
+            const displayMessage =
+                error instanceof ApiError
+                ? error.message
+                : "Failed to move out tenant. Please try again.";
+
+            alert(displayMessage);
+            setMoveOutError(displayMessage);
         }
     };
 
@@ -381,72 +340,60 @@ export default function TenantsManagementPage() {
 
     const fetchUnitsAndTenants = async () => {
         try {
-            //setLoading(true);
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/units`
-            );
-            if (!res.ok) throw new Error("Error fetching units");
-            const unitData = await res.json();
+            // Fetch all data concurrently with JWT token automatically added
+            const [unitData, tenantData, subtenants] = await Promise.all([
+            api.get<Unit[]>('/api/units'),
+            api.get<any[]>('/api/tenants'),
+            api.get<any[]>('/api/subtenants'),
+            ]);
 
-            const tenantRes = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/tenants`
-            );
-            if (!tenantRes.ok) throw new Error("Error fetching tenants");
-            const tenantData = await tenantRes.json();
+            const processed: TenantWithUnitDetails[] = unitData.map((u: Unit) => {
+            const tenant = tenantData.find(t => Number(t.unitId) === u.id);
+            const tenantSubs = subtenants.filter(s => s.mainTenantId === tenant?.id);
 
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/subtenants`
-            );
-            const subtenants = await response.json();
-
-            const processed: TenantWithUnitDetails[] = unitData.map(
-                (u: Unit) => {
-                    const tenant = tenantData.find(
-                        (t: any) => Number(t.unitId) === u.id
-                    );
-                    const tenantSubs = subtenants.filter(
-                        (s: any) => s.mainTenantId === tenant?.id
-                    );
-
-                    if (tenant) {
-                        return {
-                            id: tenant.id,
-                            firstName: tenant.firstName,
-                            middleInitial:
-                                tenant.middleInitial || tenant.middleInitial,
-                            lastName: tenant.lastName,
-                            email: tenant.email,
-                            phoneNumber: tenant.phoneNumber,
-                            dateAdded: tenant.dateAdded,
-                            subTenants: tenantSubs,
-                            unit: u,
-                            messengerLink: tenant.messengerLink,
-                            moveInDate: tenant.moveInDate,
-                            moveOutDate: tenant.moveOutDate,
-                        };
-                    } else {
-                        return {
-                            id: null,
-                            firstName: null,
-                            middleInitial: null,
-                            lastName: null,
-                            email: null,
-                            phoneNumber: null,
-                            dateAdded: null,
-                            subTenants: [],
-                            unit: u,
-                            messengerLink: null,
-                            moveInDate: null,
-                            moveOutDate: null
-                        } as TenantWithUnitDetails;
-                    }
-                }
-            );
+            if (tenant) {
+                return {
+                id: tenant.id,
+                firstName: tenant.firstName,
+                middleInitial: tenant.middleInitial || null,
+                lastName: tenant.lastName,
+                email: tenant.email,
+                phoneNumber: tenant.phoneNumber,
+                dateAdded: tenant.dateAdded,
+                subTenants: tenantSubs,
+                unit: u,
+                messengerLink: tenant.messengerLink || null,
+                moveInDate: tenant.moveInDate,
+                moveOutDate: tenant.moveOutDate,
+                };
+            } else {
+                return {
+                id: null,
+                firstName: null,
+                middleInitial: null,
+                lastName: null,
+                email: null,
+                phoneNumber: null,
+                dateAdded: null,
+                subTenants: [],
+                unit: u,
+                messengerLink: null,
+                moveInDate: null,
+                moveOutDate: null,
+                } as TenantWithUnitDetails;
+            }
+            });
 
             setFullTenantData(processed);
             setUnits(unitData);
-        } catch (err: any) {
-            setErrorMessage(err.message || "Error fetching data");
+        } catch (err: unknown) {
+            const displayMessage =
+            err instanceof ApiError
+                ? err.message
+                : "Error fetching data. Please try again.";
+
+            console.error("fetchUnitsAndTenants error:", err);
+            setErrorMessage(displayMessage);
         }
     };
 
