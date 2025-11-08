@@ -46,6 +46,9 @@ management.health.db.enabled=true
 # JWT Configuration
 jwt.secret=${JWT_SECRET:super_secret_key}
 jwt.expiration=${JWT_EXPIRATION:86400000} # 1 day in ms
+
+# Registration Key for User Signup
+app.registration.key=${REGISTRATION_KEY:MySecretKey123}
 EOF
 
   # Re-stage the safe template

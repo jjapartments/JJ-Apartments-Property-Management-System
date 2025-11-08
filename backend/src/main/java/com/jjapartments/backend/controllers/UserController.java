@@ -1,6 +1,7 @@
 package com.jjapartments.backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -11,10 +12,14 @@ import com.jjapartments.backend.exception.ErrorException;
 import com.jjapartments.backend.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
+    @Value("${app.registration.key}")
+    private String registrationKey;
 
     @Autowired
     private UserRepository userRepository;
@@ -23,14 +28,23 @@ public class UserController {
 
     // Create
     @PostMapping("/add")
-    public ResponseEntity<String> addUser(@RequestBody User user) {
-        try { // returns 201 created
-              // Hash the password before saving
+    public ResponseEntity<?> addUser(@RequestBody User user) {
+        try {
+            // Validate registration key
+            String providedKey = user.getRegistrationKey();
+            if (providedKey == null || !providedKey.equals(registrationKey)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Invalid registration key"));
+            }
+
+            // Hash the password before saving
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             userRepository.add(user);
-            return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
-        } catch (ErrorException e) { // returns 400 bad request
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(Map.of("message", "User created successfully"));
+        } catch (ErrorException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -50,12 +64,13 @@ public class UserController {
 
     // Delete
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable int id) {
+    public ResponseEntity<?> deleteUser(@PathVariable int id) {
         int rowsAffected = userRepository.delete(id);
         if (rowsAffected > 0) {
-            return ResponseEntity.ok("User deleted successfully.");
+            return ResponseEntity.ok(Map.of("message", "User deleted successfully."));
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "User not found"));
         }
     }
 
@@ -66,7 +81,8 @@ public class UserController {
             userRepository.update(id, user);
             return ResponseEntity.ok(userRepository.findById(id));
         } catch (ErrorException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 

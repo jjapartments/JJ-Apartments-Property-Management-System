@@ -12,7 +12,8 @@ import { useAuth } from '@/hooks/useAuth';
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
     username: '',
-    password: ''
+    password: '',
+    registrationKey: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -212,6 +213,23 @@ export default function SignUpPage() {
                   </span>
                 </Button>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="registrationKey" className="text-sm font-medium text-gray-700">
+                Registration Key
+              </Label>
+              <Input
+                id="registrationKey"
+                name="registrationKey"
+                type="text"
+                placeholder="Enter registration key"
+                value={formData.registrationKey}
+                disabled={isLoading}
+                onChange={handleChange}
+                className="w-full h-12 px-4 border-gray-300 focus:border-yellow-400 focus:ring-yellow-400"
+                required
+              />
             </div>
 
             <Button 
