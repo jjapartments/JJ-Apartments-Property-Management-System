@@ -62,11 +62,17 @@ export async function apiRequest<T = any>(
 
   // Handle non-OK responses
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new ApiError(
-      response.status,
-      errorData.error || errorData.message || 'Request failed'
-    );
+    let errorMessage = 'Request failed';
+    
+    const contentType = response.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
+      const errorData = await response.json().catch(() => ({}));
+       errorMessage = errorData.error || errorData.message || errorMessage;
+    } else if (contentType?.includes('text/')) {
+      errorMessage = await response.text();
+    }
+    
+    throw new ApiError(response.status, errorMessage);
   }
 
   // Handle JSON, text, or empty responses
