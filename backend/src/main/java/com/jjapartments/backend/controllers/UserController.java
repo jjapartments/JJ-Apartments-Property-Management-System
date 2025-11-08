@@ -10,9 +10,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.jjapartments.backend.models.User;
 import com.jjapartments.backend.exception.ErrorException;
 import com.jjapartments.backend.repository.UserRepository;
+import com.jjapartments.backend.util.JwtUtil;
 import java.util.List;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/users")
@@ -23,6 +24,9 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -86,7 +90,7 @@ public class UserController {
         }
     }
 
-    // Add login endpoint
+    // Login endpoint with JWT
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User user) {
         try {
@@ -102,10 +106,15 @@ public class UserController {
                         .body(Map.of("error", "INVALID_PASSWORD"));
             }
 
-            // Success: remove password before sending
-            existingUser.setPassword(null);
-            return ResponseEntity.ok(existingUser);
+            // Generate JWT token
+            String token = jwtUtil.generateToken(existingUser.getId(), existingUser.getUsername());
 
+            // Return token and username
+            Map<String, String> response = new HashMap<>();
+            response.put("token", token);
+            response.put("username", existingUser.getUsername());
+
+            return ResponseEntity.ok(response);
         } catch (ErrorException e) {
             // This catches the "User with username X not found" from repository
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
