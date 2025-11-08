@@ -46,13 +46,16 @@ export default function SignUpPage() {
         const errorData = await response.json();
         let errorMessage = 'Failed to sign up';
         
-        // Map specific backend errors to user-friendly messages
         if (errorData.error) {
           if (errorData.error.includes('already taken')) {
             errorMessage = 'This username is already taken. Please choose a different username.';
+          } else if (errorData.error.includes('Invalid registration key')) {
+            errorMessage = 'Invalid registration key. Please check and try again.';
           } else {
             errorMessage = errorData.error;
           }
+        } else if (response.status === 403) {
+          errorMessage = 'Invalid registration key. Access denied.';
         } else if (response.status >= 500) {
           errorMessage = 'Server error. Please try again later.';
         }

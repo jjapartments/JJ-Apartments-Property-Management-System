@@ -1,12 +1,13 @@
 package com.jjapartments.backend.models;
 
 public class User {
-  
+
     private int id;
     private String username;
     private String password;
     private String createdAt;
-    
+    private String registrationKey;
+
     public int getId() {
         return id;
     }
@@ -37,5 +38,13 @@ public class User {
 
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getRegistrationKey() {
+        return registrationKey;
+    }
+
+    public void setRegistrationKey(String registrationKey) {
+        this.registrationKey = registrationKey;
     }
 }

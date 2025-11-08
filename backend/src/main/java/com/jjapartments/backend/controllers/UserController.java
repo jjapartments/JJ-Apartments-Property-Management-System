@@ -1,6 +1,7 @@
 package com.jjapartments.backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -11,10 +12,14 @@ import com.jjapartments.backend.exception.ErrorException;
 import com.jjapartments.backend.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
+    @Value("${app.registration.key}")
+    private String registrationKey;
 
     @Autowired
     private UserRepository userRepository;
@@ -25,6 +30,14 @@ public class UserController {
     @PostMapping("/add")
     public ResponseEntity<?> addUser(@RequestBody User user) {
         try {
+            // Validate registration key
+            String providedKey = user.getRegistrationKey();
+            if (providedKey == null || !providedKey.equals(registrationKey)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Invalid registration key"));
+            }
+
+            // Hash the password before saving
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             userRepository.add(user);
             return ResponseEntity.status(HttpStatus.CREATED)
