@@ -55,15 +55,12 @@ export async function apiRequest<T = any>(
     localStorage.removeItem('username');
     localStorage.removeItem('isLoggedIn');
     
-    // Optional: Show toast notification
-    if (typeof window !== 'undefined' && (window as any).showToast) {
-      (window as any).showToast('Session expired. Please login again.');
-    }
-    
+    alert('Session expired. Please login again.');
     window.location.href = '/admin-portal/login';
     throw new ApiError(401, 'Session expired. Please login again.');
   }
 
+  // Handle non-OK responses
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new ApiError(
@@ -72,7 +69,15 @@ export async function apiRequest<T = any>(
     );
   }
 
-  return response.json();
+  // Handle JSON, text, or empty responses
+  const contentType = response.headers.get('content-type');
+  if (contentType?.includes('application/json')) {
+    return response.json();
+  } else if (contentType?.includes('text/')) {
+    return (await response.text()) as unknown as T;
+  } else {
+    return null as unknown as T; // empty response
+  }
 }
 
 /**
