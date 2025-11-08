@@ -110,10 +110,10 @@ export default function LoginPage() {
         throw new Error(errorMessage);
       }
 
-      const user = await response.json();
+      const data = await response.json();
       
       // Use the login function from useAuth for proper history management
-      login(user.username);
+      login(data.username, data.token);
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Failed to log in. Please check your credentials and try again.');

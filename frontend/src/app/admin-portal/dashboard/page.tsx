@@ -1,5 +1,6 @@
 'use client';
 
+import { api } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -141,44 +142,13 @@ export default function Home() {
         setError(null);
         
         const [monthlyResponse, tenantsResponse, unitsResponse, paymentsResponse, utilitiesResponse, expensesResponse] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/monthlyreports`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tenants`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/utilities`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/expenses`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          })
+          api.get('/api/monthlyreports'),
+          api.get('/api/tenants'),
+          api.get('/api/units'),
+          api.get('/api/payments'),
+          api.get('/api/utilities'),
+          api.get('/api/expenses'),
         ]);
-
 
         if (!monthlyResponse.ok) {
           throw new Error(`Monthly reports API error: ${monthlyResponse.status}`);
