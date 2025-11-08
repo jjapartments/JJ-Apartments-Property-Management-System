@@ -33,7 +33,6 @@ export async function apiRequest<T = any>(
     const token = localStorage.getItem('token');
     
     if (!token) {
-      // Redirect to login if no token is found
       localStorage.removeItem('username');
       localStorage.removeItem('isLoggedIn');
       window.location.href = '/admin-portal/login';

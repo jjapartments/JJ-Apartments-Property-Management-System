@@ -24,7 +24,7 @@ export default function SignUpPage() {
   // Check if user is already logged in
   useEffect(() => {
     if (!authLoading && isLoggedIn) {
-      router.replace('/');
+      router.replace('/admin-portal/dashboard');
     }
   }, [isLoggedIn, authLoading, router]);
 
@@ -32,7 +32,7 @@ export default function SignUpPage() {
   useEffect(() => {
     const handlePopState = () => {
       if (isLoggedIn) {
-        router.replace('/');
+        router.replace('/admin-portal/dashboard');
       }
     };
 
