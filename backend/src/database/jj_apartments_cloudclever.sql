@@ -265,6 +265,39 @@ CREATE TABLE IF NOT EXISTS monthly_reports (
   CONSTRAINT fk_monthlyreports_units1 FOREIGN KEY (units_id) REFERENCES units (id) ON DELETE SET NULL
 ) ENGINE = InnoDB;
 
+-- -----------------------------------------------------
+-- Table: tickets
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS tickets (
+    id INT NOT NULL AUTO_INCREMENT,
+    unit_number VARCHAR(1) NOT NULL,
+    apartment_name VARCHAR(45) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    phone_number VARCHAR(15) NOT NULL,
+    email VARCHAR(255) NULL,
+    messenger_link VARCHAR(512) NULL,
+    category ENUM(
+        'Maintenance & Repairs',
+        'Security & Safety',
+        'Utilities',
+        'Payment & Billing',
+        'Amenities & Facilities',
+        'Others'
+    ) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    status ENUM(
+        'Pending',
+        'In Progress',
+        'Resolved',
+        'Closed'
+    ) NOT NULL DEFAULT 'Pending',
+    submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status_updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    status_updated_by VARCHAR(45) NOT NULL,
+    PRIMARY KEY (id)
+) ENGINE = InnoDB;
+
 INSERT INTO monthly_reports(year, month, units_id, monthly_dues, utility_bills, expenses)
 VALUES
 (2025, 7, 1, 11000.00, 925.00, 1500.00),
