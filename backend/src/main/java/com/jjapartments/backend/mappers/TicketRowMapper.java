@@ -19,10 +19,10 @@ public class TicketRowMapper implements RowMapper<Ticket> {
         ticket.setPhoneNumber(rs.getString("phone_number"));
         ticket.setEmail(rs.getString("email"));
         ticket.setMessengerLink(rs.getString("messenger_link"));
-        ticket.setCategory(rs.getString("category"));
+        ticket.setCategory(Category.fromLabel(rs.getString("category")));
         ticket.setSubject(rs.getString("subject"));
         ticket.setBody(rs.getString("body"));
-        ticket.setStatus(rs.getString("status"));
+        ticket.setStatus(Status.fromLabel(rs.getString("status")));
         ticket.setSubmittedAt(rs.getString("submitted_at"));
         ticket.setStatusUpdatedAt(rs.getString("status_updated_at"));
         ticket.setStatusUpdatedBy(rs.getString("status_updated_by"));
