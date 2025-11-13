@@ -2,6 +2,8 @@ package com.jjapartments.backend.mappers;
 
 import org.springframework.jdbc.core.RowMapper;
 import com.jjapartments.backend.models.Ticket;
+import com.jjapartments.backend.models.Category;
+import com.jjapartments.backend.models.Status;
 import org.springframework.lang.NonNull;
 import java.sql.ResultSet;
 import java.sql.SQLException;
