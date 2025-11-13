@@ -3,14 +3,14 @@ package com.jjapartments.backend.repository;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 import com.jjapartments.backend.models.Ticket;
-import com.jjapartments.backend.exception.ErrorException;
 import com.jjapartments.backend.mappers.TicketRowMapper;
+import com.jjapartments.backend.exception.ErrorException;
 
 @Repository
 public class TicketRepository {
@@ -23,25 +23,18 @@ public class TicketRepository {
         return jdbcTemplate.query(sql, new TicketRowMapper());
     }
 
-    // for creating
-    public String duplicateExists(Ticket ticket) {
-        String sqlChecker = """SELECT COUNT(*) FROM tickets WHERE phone_number = ? AND subject = ? AND status = 'Pending'""";
-        Integer count = jdbcTemplate.queryForObject(sqlChecker, Integer.class, ticket.getPhoneNumber(), ticket.getSubject());
-        if (count != null && count > 0) {
-            return "ticket";
-        }
-
-        return null;
+    private boolean duplicateExists(Ticket ticket) {
+        String sql = "SELECT COUNT(*) FROM tickets WHERE phone_number = ? AND subject = ? AND status = 'Pending'";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, ticket.getPhoneNumber(), ticket.getSubject());
+        return count != null && count > 0;
     }
 
     public Ticket add(Ticket ticket) {
-        String duplicateField = duplicateExists(ticket);
-        if (duplicateField != null) {
+        if (duplicateExists(ticket)) {
             throw new ErrorException("A pending ticket with the same phone number and subject already exists.");
         }
 
-        String sql = """INSERT INTO tickets (unit_number, apartment_name, name, phone_number, email, messenger_link, category, subject, body, status, status_updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)""";
-
+        String sql = "INSERT INTO tickets (unit_number, apartment_name, name, phone_number, email, messenger_link, category, subject, body, status, status_updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)";
         jdbcTemplate.update(
             sql,
             ticket.getUnitNumber(),
@@ -56,16 +49,7 @@ public class TicketRepository {
             ticket.getStatus() == null ? "Pending" : ticket.getStatus()
         );
 
-        String fetchSql = """
-            SELECT * FROM tickets
-            WHERE unit_number = ?
-            AND apartment_name = ?
-            AND name = ?
-            AND phone_number = ?
-            ORDER BY id DESC
-            LIMIT 1
-        """;
-
+        String fetchSql = "SELECT * FROM tickets WHERE unit_number = ? AND apartment_name = ? AND name = ? AND phone_number = ? ORDER BY id DESC LIMIT 1";
         return jdbcTemplate.queryForObject(
             fetchSql,
             new TicketRowMapper(),
@@ -86,10 +70,8 @@ public class TicketRepository {
         try {
             return jdbcTemplate.queryForObject(sql, new TicketRowMapper(), id);
         } catch (EmptyResultDataAccessException e) {
-            // No matching ticket found — return null instead of throwing an exception
-            return null;
+            return null; 
         } catch (Exception e) {
-            // Handle any unexpected database error
             throw new ErrorException("An error occurred while retrieving the ticket: " + e.getMessage());
         }
     }
@@ -100,12 +82,7 @@ public class TicketRepository {
             throw new ErrorException("Ticket with ID " + id + " not found.");
         }
 
-        String sql = """
-            UPDATE tickets
-            SET status = ?, status_updated_at = ?, status_updated_by = ?
-            WHERE id = ?
-        """;
-
+        String sql = "UPDATE tickets SET status = ?, status_updated_at = ?, status_updated_by = ? WHERE id = ?";
         return jdbcTemplate.update(sql, status, statusUpdatedAt, statusUpdatedBy, id);
     }
 
