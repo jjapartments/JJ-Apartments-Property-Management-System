@@ -1,4 +1,6 @@
 package com.jjapartments.backend.models;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonCreator;
 
 public enum Status {
     PENDING("Pending"),
@@ -12,10 +14,12 @@ public enum Status {
         this.label = label;
     }
 
+    @JsonValue
     public String getLabel() {
         return label;
     }
 
+    @JsonCreator
     public static Status fromLabel(String label) {
         if (label == null) {
             return null;
