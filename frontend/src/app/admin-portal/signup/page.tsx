@@ -46,7 +46,7 @@ export default function SignUpPage() {
   // Show loading while auth is being checked
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" data-cy="auth-loading">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
@@ -155,10 +155,10 @@ export default function SignUpPage() {
             <p className="text-gray-600">Sign up to access the property management system</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" data-cy="signup-form">
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+              <Alert variant="destructive" data-cy="error-alert">
+                <AlertDescription data-cy="error-message">{error}</AlertDescription>
               </Alert>
             )}
             
@@ -170,6 +170,7 @@ export default function SignUpPage() {
                 id="username"
                 name="username"
                 type="text"
+                data-cy="username-input"
                 placeholder="Enter your username"
                 value={formData.username}
                 disabled={isLoading}
@@ -188,6 +189,7 @@ export default function SignUpPage() {
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
+                  data-cy="password-input"
                   placeholder="Enter your password"
                   value={formData.password}
                   disabled={isLoading}
@@ -199,6 +201,7 @@ export default function SignUpPage() {
                   type="button"
                   variant="ghost"
                   size="sm"
+                  data-cy="toggle-password"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
@@ -224,6 +227,7 @@ export default function SignUpPage() {
                   id="registrationKey"
                   name="registrationKey"
                   type={showPassword ? 'text' : 'password'} // same toggle as password
+                  data-cy="registration-key-input"
                   placeholder="Enter registration key"
                   value={formData.registrationKey}
                   disabled={isLoading}
@@ -252,7 +256,8 @@ export default function SignUpPage() {
             </div>
 
             <Button 
-              type="submit" 
+              type="submit"
+              data-cy="submit-button"
               className="w-full h-12 bg-black hover:bg-black text-yellow-300 font-medium text-base"
               disabled={isLoading}
             >
@@ -270,7 +275,11 @@ export default function SignUpPage() {
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <a href="/admin-portal/login" className="text-yellow-500 hover:text-yellow-600">
+              <a 
+                href="/admin-portal/login" 
+                data-cy="login-link"
+                className="text-yellow-500 hover:text-yellow-600"
+              >
                 Sign in here
               </a>
             </p>
