@@ -112,7 +112,7 @@ jobs:
       # Load SQL schema into MySQL
       - name: Load database schema
         run: |
-          mysql -h 127.0.0.1 -P 3306 -u root -proot jj_apartments < backend/src/database/init.sql
+          mysql -h 127.0.0.1 -P 3306 -u root -proot jj_apartments < backend/src/database/jj_apartments.sql
 
       # Setup Java and start backend
       - name: Setup Java 21
