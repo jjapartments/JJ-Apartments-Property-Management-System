@@ -133,10 +133,6 @@ jobs:
           DATABASE_USERNAME: root
           DATABASE_PASSWORD: root
 
-      - name: Wait for backend to be ready
-        working-directory: ./frontend
-        run: npx wait-on --timeout 60000 http://localhost:8080
-
       # Setup Node and frontend for tests
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -148,6 +144,10 @@ jobs:
       - name: Install frontend dependencies
         working-directory: ./frontend
         run: npm ci
+
+      - name: Wait for backend to be ready
+        working-directory: ./frontend
+        run: npx wait-on --timeout 60000 http://localhost:8080
 
       - name: Run Cypress E2E tests
         working-directory: ./frontend
