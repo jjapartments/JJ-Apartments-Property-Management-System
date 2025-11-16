@@ -8,7 +8,7 @@ export default defineConfig({
     },
     specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
     supportFile: 'cypress/support/e2e.ts',
-    video: false, // make true to record videos
+    video: true, 
     screenshotOnRunFailure: true,
     viewportWidth: 1280,
     viewportHeight: 720,
