@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Script from "next/script";
 import {
     Select,
@@ -40,20 +40,10 @@ export default function RequestsPage() {
     });
 
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
     const [receiptOpen, setReceiptOpen] = useState(false);
     const [receiptData, setReceiptData] = useState({ id: "", timestamp: "" });
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (typeof window !== "undefined" && window.grecaptcha) {
-                window.grecaptcha.render("recaptcha", {
-                    sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
-                });
-                clearInterval(interval);
-            }
-        }, 500);
-    }, []);
+    // NOTE: i removed the recaptcha manual render, reCAPTCHA auto-renders
 
     const handleChange = (field: string, value: string) => {
         setFormData({ ...formData, [field]: value });
@@ -87,16 +77,20 @@ export default function RequestsPage() {
         }
 
         const payload = {
-            apartmentName: formData.apartment,
-            name: formData.name,
-            phoneNumber: formData.phone,
-            email: formData.email,
-            messengerLink: formData.messenger,
-            category: formData.category,
-            subject: formData.subject,
-            body: formData.description,
-            captchaToken: token,
-            submittedAt: new Date().toISOString(),
+            recaptchaToken: token,  
+            ticket: { 
+                // TODO: separate unit number and apartment name fields
+                unitNumber: formData.apartment.split(" - ")[0]?.trim() || "",
+                apartmentName: formData.apartment.split(" - ")[1]?.trim() || formData.apartment,
+                name: formData.name,
+                phoneNumber: formData.phone,
+                email: formData.email,
+                messengerLink: formData.messenger,
+                category: formData.category,
+                subject: formData.subject,
+                body: formData.description,
+                submittedAt: new Date().toISOString(),
+            }
         };
 
         console.log("Payload:", payload);
@@ -121,7 +115,7 @@ export default function RequestsPage() {
                 return;
             }
 
-            setReceiptData({ id: data.id, timestamp: data.submittedAt });
+            setReceiptData({ id: data.id.toString(), timestamp: payload.ticket.submittedAt });
             setReceiptOpen(true);
 
             console.log("Backend response:", data);
@@ -268,10 +262,10 @@ export default function RequestsPage() {
 
                     {/* CAPTCHA and Submit */}
                     <div className="w-full flex flex-col md:flex-row justify-between items-center px-2 gap-4 md:gap-0">
-                        {/* CAPTCHA */}
+                        {/* CAPTCHA - CHANGED: added g-recaptcha class and data-sitekey */}
                         <div
-                            className="w-full md:w-1/2 transform scale-85 origin-top-left items-center"
-                            id="recaptcha"
+                            className="g-recaptcha w-full md:w-1/2 transform scale-85 origin-top-left items-center"
+                            data-sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
                         ></div>
 
                         {/* Submit Button */}

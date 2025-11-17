@@ -37,6 +37,7 @@ export function ReceiptModal({
                     <p className="text-m">
                         Success! Your request has been submitted.
                     </p>
+                    {/* TODO: add reference no. and timestamp formatting */}
                     <p className="mt-4">
                         <span className="font-semibold">Reference:</span>{" "}
                         {requestId}
