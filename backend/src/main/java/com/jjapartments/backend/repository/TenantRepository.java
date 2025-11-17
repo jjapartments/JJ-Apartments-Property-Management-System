@@ -321,11 +321,26 @@ public class TenantRepository {
         return result;
     }
 
+    private void validateMoveOutDate(LocalDate moveInDate, LocalDate moveOutDate) {
+        if (moveOutDate.isBefore(moveInDate)) {
+            throw new ErrorException("Move-out date cannot be before move-in date");
+        }
+    }
+
     public Tenant updateMoveOut(int id, LocalDate moveOutDate) {
         Tenant tenant = findById(id);
         if (tenant.getMoveOutDate() != null) {
             throw new ErrorException("Tenant has already moved out.");
         }
+
+        LocalDate moveInDate;
+        try {
+            moveInDate = LocalDate.parse(tenant.getMoveInDate(), DateTimeFormatter.ISO_LOCAL_DATE);
+        } catch (DateTimeParseException e) {
+            throw new ErrorException("Invalid move-in date format in database.");
+        }
+
+        validateMoveOutDate(moveInDate, moveOutDate);
 
         String sql = "UPDATE tenants SET move_out_date = ? WHERE id = ?";
         jdbcTemplate.update(sql, Date.valueOf(moveOutDate), id);
@@ -361,11 +376,11 @@ public class TenantRepository {
     @Transactional(readOnly = true)
     public List<Tenant> findAllMovedOutByUnitId(int unitId) {
         String sql = """
-            SELECT * FROM tenants
-            WHERE units_id = ?
-            AND move_out_date IS NOT NULL
-            ORDER BY move_out_date DESC
-        """;
+                    SELECT * FROM tenants
+                    WHERE units_id = ?
+                    AND move_out_date IS NOT NULL
+                    ORDER BY move_out_date DESC
+                """;
 
         return jdbcTemplate.query(sql, new TenantRowMapper(), unitId);
     }
