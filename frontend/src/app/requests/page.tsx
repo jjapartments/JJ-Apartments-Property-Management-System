@@ -29,6 +29,7 @@ type Unit = {
 
 export default function RequestsPage() {
     const [formData, setFormData] = useState({
+        unit: "",
         apartment: "",
         name: "",
         phone: "",
@@ -51,6 +52,7 @@ export default function RequestsPage() {
 
     const validate = () => {
         const newErrors: { [key: string]: string } = {};
+        if (!formData.unit.trim()) newErrors.unit = "Required";
         if (!formData.apartment.trim()) newErrors.apartment = "Required";
         if (!formData.name.trim()) newErrors.name = "Required";
         if (!formData.phone.trim()) newErrors.phone = "Required";
@@ -77,11 +79,10 @@ export default function RequestsPage() {
         }
 
         const payload = {
-            recaptchaToken: token,  
-            ticket: { 
-                // TODO: separate unit number and apartment name fields
-                unitNumber: formData.apartment.split(" - ")[0]?.trim() || "",
-                apartmentName: formData.apartment.split(" - ")[1]?.trim() || formData.apartment,
+            recaptchaToken: token,
+            ticket: {
+                unitNumber: formData.unit,
+                apartmentName: formData.apartment,
                 name: formData.name,
                 phoneNumber: formData.phone,
                 email: formData.email,
@@ -90,7 +91,7 @@ export default function RequestsPage() {
                 subject: formData.subject,
                 body: formData.description,
                 submittedAt: new Date().toISOString(),
-            }
+            },
         };
 
         console.log("Payload:", payload);
@@ -115,13 +116,29 @@ export default function RequestsPage() {
                 return;
             }
 
-            setReceiptData({ id: data.id.toString(), timestamp: payload.ticket.submittedAt });
+            const date = new Date(payload.ticket.submittedAt);
+
+            const formatted = date.toLocaleString("en-US", {
+                month: "long",
+                day: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true, // AM/PM
+            });
+
+            setReceiptData({
+                id: data.id.toString(),
+                timestamp: formatted,
+            });
+
             setReceiptOpen(true);
 
             console.log("Backend response:", data);
             alert("Ticket submitted successfully!");
 
             setFormData({
+                unit: "",
                 apartment: "",
                 name: "",
                 phone: "",
@@ -164,8 +181,16 @@ export default function RequestsPage() {
 
                     {/* Inputs */}
                     <FormInput
-                        label="Apartment and Unit Number"
-                        placeholder="Unit A - Maple Residences"
+                        label="Unit Number"
+                        placeholder="Unit A"
+                        value={formData.unit}
+                        onChange={(v) => handleChange("unit", v)}
+                        required
+                        error={errors.unit}
+                    />
+                    <FormInput
+                        label="Apartment Name"
+                        placeholder="Maple Residences"
                         value={formData.apartment}
                         onChange={(v) => handleChange("apartment", v)}
                         required
@@ -262,10 +287,11 @@ export default function RequestsPage() {
 
                     {/* CAPTCHA and Submit */}
                     <div className="w-full flex flex-col md:flex-row justify-between items-center px-2 gap-4 md:gap-0">
-                        {/* CAPTCHA - CHANGED: added g-recaptcha class and data-sitekey */}
                         <div
                             className="g-recaptcha w-full md:w-1/2 transform scale-85 origin-top-left items-center"
-                            data-sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                            data-sitekey={
+                                process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+                            }
                         ></div>
 
                         {/* Submit Button */}
