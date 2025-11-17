@@ -6,6 +6,8 @@ import { TopBar } from "@/components/TopBar";
 import Sidebar from "@/components/sidebar";
 import { usePathname } from 'next/navigation';
 import { DataProvider } from "@/contexts/DataContext";
+import "./globals.css";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +43,11 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <Script
+        src="https://www.google.com/recaptcha/api.js"
+        strategy="afterInteractive"
+      />
+
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
