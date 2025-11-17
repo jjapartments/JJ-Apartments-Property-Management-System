@@ -274,7 +274,7 @@ CREATE TABLE IF NOT EXISTS monthly_reports (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS tickets (
     id INT NOT NULL AUTO_INCREMENT,
-    unit_number VARCHAR(1) NOT NULL,
+    unit_number VARCHAR(12) NOT NULL,
     apartment_name VARCHAR(45) NOT NULL,
     name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(15) NOT NULL,
@@ -298,7 +298,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     ) NOT NULL DEFAULT 'Pending',
     submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status_updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    status_updated_by VARCHAR(45) NOT NULL,
+    status_updated_by VARCHAR(45) NULL,
     PRIMARY KEY (id)
 ) ENGINE = InnoDB;
 

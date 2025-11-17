@@ -1,4 +1,6 @@
 package com.jjapartments.backend.models;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonCreator;
 
 public enum Category {
     MAINTENANCE_AND_REPAIRS("Maintenance & Repairs"),
@@ -15,10 +17,12 @@ public enum Category {
         this.label = label;
     }
 
+    @JsonValue
     public String getLabel() {
         return label;
     }
 
+    @JsonCreator
     public static Category fromLabel(String label) {
         if (label == null) {
             return null;
