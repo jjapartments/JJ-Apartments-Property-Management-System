@@ -25,9 +25,9 @@ CREATE TABLE IF NOT EXISTS users (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `jj_apartments`.`units` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `unit_number` VARCHAR(12) NOT NULL,
+  `unit_number` VARCHAR(20) NOT NULL,
   `name` VARCHAR(100) NOT NULL,
-  `description` VARCHAR(100) NOT NULL,
+  `description` VARCHAR(150) NOT NULL,
   `price` DECIMAL(10, 2) NOT NULL,
   `num_occupants` INT NOT NULL,
   `active_tenant_id` INT NULL,
@@ -274,8 +274,8 @@ CREATE TABLE IF NOT EXISTS monthly_reports (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS tickets (
     id INT NOT NULL AUTO_INCREMENT,
-    unit_number VARCHAR(12) NOT NULL,
-    apartment_name VARCHAR(45) NOT NULL,
+    unit_number VARCHAR(20) NOT NULL,
+    apartment_name VARCHAR(100) NOT NULL,
     name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(15) NOT NULL,
     email VARCHAR(255) NULL,
