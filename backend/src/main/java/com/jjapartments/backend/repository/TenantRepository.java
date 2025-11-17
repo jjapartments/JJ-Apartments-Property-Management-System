@@ -112,38 +112,6 @@ public class TenantRepository {
         }
     }
 
-    // for creating
-    public String duplicateExists(Tenant tenant) {
-        String sqlChecker = "SELECT COUNT(*) FROM tenants WHERE email = ?";
-        Integer count = jdbcTemplate.queryForObject(sqlChecker, Integer.class, tenant.getEmail());
-        if (count != null && count > 0) {
-            return "email";
-        }
-        String sqlChecker2 = "SELECT COUNT(*) FROM tenants WHERE phone_number = ?";
-        Integer count2 = jdbcTemplate.queryForObject(sqlChecker2, Integer.class, tenant.getPhoneNumber());
-        if (count2 != null && count2 > 0) {
-            return "phone";
-        }
-
-        return null;
-    }
-
-    // for updating
-    public String duplicateExists(Tenant tenant, int excludeId) {
-        String sqlChecker = "SELECT COUNT(*) FROM tenants WHERE email = ? AND id != ?";
-        Integer count = jdbcTemplate.queryForObject(sqlChecker, Integer.class, tenant.getEmail(), excludeId);
-        if (count != null && count > 0) {
-            return "email";
-        }
-        String sqlChecker2 = "SELECT COUNT(*) FROM tenants WHERE phone_number = ? AND id != ?";
-        Integer count2 = jdbcTemplate.queryForObject(sqlChecker2, Integer.class, tenant.getPhoneNumber(), excludeId);
-        if (count2 != null && count2 > 0) {
-            return "phone";
-        }
-
-        return null;
-    }
-
     @Transactional
     public Tenant add(Tenant tenant) {
         validateMoveInDate(tenant.getMoveInDate());
@@ -156,18 +124,6 @@ public class TenantRepository {
         }
         if (!isUnitVacant(tenant.getUnitId())) {
             throw new ErrorException("Unit is already occupied.");
-        }
-
-        String duplicateField = duplicateExists(tenant);
-        if (duplicateField != null) {
-            switch (duplicateField) {
-                case "email":
-                    throw new ErrorException("The email is already taken.");
-                case "phone":
-                    throw new ErrorException("The phone number is already taken.");
-                default:
-                    throw new ErrorException("The tenant is already registered.");
-            }
         }
 
         String sql = "INSERT INTO tenants(last_name, first_name, middle_initial, email, phone_number, messenger_link, units_id, move_in_date, move_out_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -281,18 +237,6 @@ public class TenantRepository {
             }
         }
 
-        String duplicateField = duplicateExists(tenant, existingTenant.getId());
-        if (duplicateField != null) {
-            switch (duplicateField) {
-                case "email":
-                    throw new ErrorException("The email is already taken.");
-                case "phone":
-                    throw new ErrorException("The phone number is already taken.");
-                default:
-                    throw new ErrorException("The tenant is already registered.");
-
-            }
-        }
         String sql = "UPDATE tenants SET last_name = ?, first_name = ?, middle_initial = ?, email = ?, phone_number = ?, messenger_link = ?, units_id = ?, move_in_date = ? WHERE id = ?";
         int result = jdbcTemplate.update(sql, tenant.getLastName(), tenant.getFirstName(), tenant.getMiddleInitial(),
                 tenant.getEmail(), tenant.getPhoneNumber(), tenant.getMessengerLink(), tenant.getUnitId(),
@@ -321,11 +265,26 @@ public class TenantRepository {
         return result;
     }
 
+    private void validateMoveOutDate(LocalDate moveInDate, LocalDate moveOutDate) {
+        if (moveOutDate.isBefore(moveInDate)) {
+            throw new ErrorException("Move-out date cannot be before move-in date");
+        }
+    }
+
     public Tenant updateMoveOut(int id, LocalDate moveOutDate) {
         Tenant tenant = findById(id);
         if (tenant.getMoveOutDate() != null) {
             throw new ErrorException("Tenant has already moved out.");
         }
+
+        LocalDate moveInDate;
+        try {
+            moveInDate = LocalDate.parse(tenant.getMoveInDate(), DateTimeFormatter.ISO_LOCAL_DATE);
+        } catch (DateTimeParseException e) {
+            throw new ErrorException("Invalid move-in date format in database.");
+        }
+
+        validateMoveOutDate(moveInDate, moveOutDate);
 
         String sql = "UPDATE tenants SET move_out_date = ? WHERE id = ?";
         jdbcTemplate.update(sql, Date.valueOf(moveOutDate), id);
@@ -361,11 +320,11 @@ public class TenantRepository {
     @Transactional(readOnly = true)
     public List<Tenant> findAllMovedOutByUnitId(int unitId) {
         String sql = """
-            SELECT * FROM tenants
-            WHERE units_id = ?
-            AND move_out_date IS NOT NULL
-            ORDER BY move_out_date DESC
-        """;
+                    SELECT * FROM tenants
+                    WHERE units_id = ?
+                    AND move_out_date IS NOT NULL
+                    ORDER BY move_out_date DESC
+                """;
 
         return jdbcTemplate.query(sql, new TenantRowMapper(), unitId);
     }

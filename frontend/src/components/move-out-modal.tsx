@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -18,23 +18,58 @@ type MoveOutModalProps = {
     onCancel: () => void;
     onConfirm: (moveOutDate: string) => void;
     error?: string;
+    moveInDate?: string; 
 };
 
 export function MoveOutModal({
     open,
-    title = "Confirm Delete",
+    title = "Confirm Move Out",
     message,
     onCancel,
     onConfirm,
     error,
+    moveInDate,
 }: MoveOutModalProps) {
 
     const [moveOutDate, setMoveOutDate] = useState<string>(
         new Date().toISOString().split("T")[0]
     );
+    const [validationError, setValidationError] = useState<string>("");
+
+    // Reset validation error when modal opens/closes
+    useEffect(() => {
+        if (open) {
+            setValidationError("");
+            setMoveOutDate(new Date().toISOString().split("T")[0]);
+        }
+    }, [open]);
+
+    // Validate move-out date against move-in date
+    const validateDates = (moveOut: string): boolean => {
+        if (!moveInDate) return true;
+
+        const moveInDateObj = new Date(moveInDate);
+        const moveOutDateObj = new Date(moveOut);
+
+        if (moveOutDateObj < moveInDateObj) {
+            setValidationError("Move-out date cannot be before move-in date");
+            return false;
+        }
+
+        setValidationError("");
+        return true;
+    };
+
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newDate = e.target.value;
+        setMoveOutDate(newDate);
+        validateDates(newDate);
+    };
 
     const handleConfirm = () => {
-        onConfirm(moveOutDate);
+        if (validateDates(moveOutDate)) {
+            onConfirm(moveOutDate);
+        }
     };
 
     return (
@@ -48,23 +83,35 @@ export function MoveOutModal({
 
                 <p>{message}</p>
 
-                <InputField
-                    isEditing={true}
-                    label="Move-out Date"
-                    type="date"
-                    value={moveOutDate}
-                    onChange={(e) => setMoveOutDate(e.target.value)}
-                    required
-                />
+                {moveInDate && (
+                    <p className="text-sm text-gray-600">
+                        Move-in date: {new Date(moveInDate).toLocaleDateString()}
+                    </p>
+                )}
+
+                <div className="flex flex-col">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Move-out Date
+                        <span className="text-red-500"> *</span>
+                    </label>
+                    <input
+                        type="date"
+                        value={moveOutDate}
+                        onChange={handleDateChange}
+                        min={moveInDate} 
+                        className="w-full px-4 py-3 border rounded-lg transition-colors bg-white border-gray-400 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                        required
+                    />
+                </div>
 
                 <hr className="border-t border-gray-200 mt-2" />
 
                 <DialogFooter className="w-full flex items-center justify-between gap-4">
                     {/* LEFT — Error message */}
                     <div className="flex-1">
-                        {error && (
+                        {(validationError || error) && (
                             <p className="text-sm text-red-500">
-                                {error}
+                                {validationError || error}
                             </p>
                         )}
                     </div>
@@ -74,7 +121,12 @@ export function MoveOutModal({
                         <Button variant="secondary" onClick={onCancel}>
                             Cancel
                         </Button>
-                        <Button onClick={handleConfirm}>Confirm</Button>
+                        <Button 
+                            onClick={handleConfirm}
+                            disabled={!!validationError}
+                        >
+                            Confirm
+                        </Button>
                     </div>
                 </DialogFooter>
             </DialogContent>
