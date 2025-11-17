@@ -37,18 +37,17 @@ export function ReceiptModal({
                     <p className="text-m">
                         Success! Your request has been submitted.
                     </p>
-                    {/* TODO: add reference no. and timestamp formatting */}
                     <p className="mt-4">
                         <span className="font-semibold">Reference:</span>{" "}
-                        {requestId}
+                        {`REQ-${requestId.toString().padStart(6, "0")}`}
                     </p>
                     <p>
                         <span className="font-semibold">Timestamp:</span>{" "}
                         {timestamp}
                     </p>
-                    <div className="bg-gray-100 p-3 rounded-md mt-5 flex items-center gap-2">
+                    <div className="bg-gray-100 p-3 rounded-md mt-10 flex items-center gap-2">
                         <AlertCircle className="text-yellow-800 w-5 h-5" />
-                        <p className="text-yellow-800 font-medium">
+                        <p className="text-yellow-800 text-[0.875rem] font-medium">
                             Please screenshot this dialog for reference.
                         </p>
                     </div>
