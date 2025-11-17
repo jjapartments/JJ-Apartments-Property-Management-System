@@ -204,34 +204,19 @@ export default function TenantsManagementPage() {
             // Use API helper to include token automatically
             await api.post("/api/tenants/add", tenantDataPayload);
 
-            // Success — reload page
             window.location.reload();
-            } catch (error: unknown) {
+        } catch (error: unknown) {
             console.error("Error adding tenant:", error);
-
-            // Map backend error strings to user-friendly messages
-            const errorMap: Record<string, string> = {
-                "email is already taken":
-                "This email address is already registered with another tenant. Please use a different email address.",
-                "phone number is already taken":
-                "This phone number is already registered with another tenant. Please use a different phone number.",
-                "tenant is already registered":
-                "This tenant is already registered in the system.",
-            };
 
             let displayMessage = "Failed to add tenant. Please try again.";
 
             if (error instanceof ApiError && typeof error.message === "string") {
-                const mappedMessage = Object.entries(errorMap).find(([key]) =>
-                error.message.includes(key)
-                )?.[1];
-                displayMessage = mappedMessage || error.message || displayMessage;
+                displayMessage = error.message;
             }
 
             setErrorMessage(displayMessage);
             setErrorModalOpen(true);
-            }
-
+        }
     };
 
     const handleViewTenant = (tenant: TenantWithUnitDetails) => {

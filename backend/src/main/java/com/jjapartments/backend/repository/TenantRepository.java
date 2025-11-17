@@ -112,38 +112,6 @@ public class TenantRepository {
         }
     }
 
-    // for creating
-    public String duplicateExists(Tenant tenant) {
-        String sqlChecker = "SELECT COUNT(*) FROM tenants WHERE email = ?";
-        Integer count = jdbcTemplate.queryForObject(sqlChecker, Integer.class, tenant.getEmail());
-        if (count != null && count > 0) {
-            return "email";
-        }
-        String sqlChecker2 = "SELECT COUNT(*) FROM tenants WHERE phone_number = ?";
-        Integer count2 = jdbcTemplate.queryForObject(sqlChecker2, Integer.class, tenant.getPhoneNumber());
-        if (count2 != null && count2 > 0) {
-            return "phone";
-        }
-
-        return null;
-    }
-
-    // for updating
-    public String duplicateExists(Tenant tenant, int excludeId) {
-        String sqlChecker = "SELECT COUNT(*) FROM tenants WHERE email = ? AND id != ?";
-        Integer count = jdbcTemplate.queryForObject(sqlChecker, Integer.class, tenant.getEmail(), excludeId);
-        if (count != null && count > 0) {
-            return "email";
-        }
-        String sqlChecker2 = "SELECT COUNT(*) FROM tenants WHERE phone_number = ? AND id != ?";
-        Integer count2 = jdbcTemplate.queryForObject(sqlChecker2, Integer.class, tenant.getPhoneNumber(), excludeId);
-        if (count2 != null && count2 > 0) {
-            return "phone";
-        }
-
-        return null;
-    }
-
     @Transactional
     public Tenant add(Tenant tenant) {
         validateMoveInDate(tenant.getMoveInDate());
@@ -156,18 +124,6 @@ public class TenantRepository {
         }
         if (!isUnitVacant(tenant.getUnitId())) {
             throw new ErrorException("Unit is already occupied.");
-        }
-
-        String duplicateField = duplicateExists(tenant);
-        if (duplicateField != null) {
-            switch (duplicateField) {
-                case "email":
-                    throw new ErrorException("The email is already taken.");
-                case "phone":
-                    throw new ErrorException("The phone number is already taken.");
-                default:
-                    throw new ErrorException("The tenant is already registered.");
-            }
         }
 
         String sql = "INSERT INTO tenants(last_name, first_name, middle_initial, email, phone_number, messenger_link, units_id, move_in_date, move_out_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -281,18 +237,6 @@ public class TenantRepository {
             }
         }
 
-        String duplicateField = duplicateExists(tenant, existingTenant.getId());
-        if (duplicateField != null) {
-            switch (duplicateField) {
-                case "email":
-                    throw new ErrorException("The email is already taken.");
-                case "phone":
-                    throw new ErrorException("The phone number is already taken.");
-                default:
-                    throw new ErrorException("The tenant is already registered.");
-
-            }
-        }
         String sql = "UPDATE tenants SET last_name = ?, first_name = ?, middle_initial = ?, email = ?, phone_number = ?, messenger_link = ?, units_id = ?, move_in_date = ? WHERE id = ?";
         int result = jdbcTemplate.update(sql, tenant.getLastName(), tenant.getFirstName(), tenant.getMiddleInitial(),
                 tenant.getEmail(), tenant.getPhoneNumber(), tenant.getMessengerLink(), tenant.getUnitId(),

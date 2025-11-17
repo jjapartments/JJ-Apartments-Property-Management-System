@@ -72,8 +72,6 @@ CREATE TABLE IF NOT EXISTS `jj_apartments`.`tenants` (
   `move_in_date` DATE NULL,
   `move_out_date` DATE NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE,
-  UNIQUE INDEX `phone_number_UNIQUE` (`phone_number` ASC) VISIBLE,
   INDEX `fk_tenants_units1_idx` (`units_id` ASC) VISIBLE,
   CONSTRAINT `fk_tenants_units1`
     FOREIGN KEY (`units_id`)
@@ -82,18 +80,18 @@ CREATE TABLE IF NOT EXISTS `jj_apartments`.`tenants` (
 ) ENGINE = InnoDB;
 
 INSERT INTO `jj_apartments`.`tenants` 
-(`last_name`, `first_name`, `middle_initial`, `email`, `phone_number`, `messenger_link`, `units_id`) 
+(`last_name`, `first_name`, `middle_initial`, `email`, `phone_number`, `messenger_link`, `units_id`, `move_in_date`, `move_out_date`) 
 VALUES
-('Dela Cruz', 'Juan', 'R', 'juan.delacruz@example.com', '09171234567', 'https://m.me/juan.delacruz', 1),
-('Santos', 'Maria', 'L', 'maria.santos@example.com', '09181234567', 'https://facebook.com/maria.santos', 3),
-('Reyes', 'Carlos', 'T', 'carlos.reyes@example.com', '09192234567', 'https://m.me/carlos.reyes', 5),
-('Cruz', 'Angela', 'M', 'angela.cruz@example.com', '09201234567', 'https://facebook.com/angela.cruz', 7),
-('Gomez', 'Joseph', 'P', 'joseph.gomez@example.com', '09211234567', 'https://m.me/joseph.gomez', 9),
-('Torres', 'Anna', 'S', 'anna.torres@example.com', '09221234567', 'https://facebook.com/anna.torres', 11),
-('Lopez', 'Daniel', 'V', 'daniel.lopez@example.com', '09231234567', 'https://m.me/daniel.lopez', 13),
-('Garcia', 'Leah', 'C', 'leah.garcia@example.com', '09241234567', 'https://facebook.com/leah.garcia', 15),
-('Navarro', 'Miguel', 'D', 'miguel.navarro@example.com', '09251234567', 'https://m.me/miguel.navarro', 17),
-('Ramos', 'Patricia', 'E', 'patricia.ramos@example.com', '09261234567', 'https://facebook.com/patricia.ramos', 19);
+('Dela Cruz', 'Juan', 'R', 'juan.delacruz@example.com', '09171234567', 'https://m.me/juan.delacruz', 1, '2024-02-15', NULL),
+('Santos', 'Maria', 'L', 'maria.santos@example.com', '09181234567', 'https://facebook.com/maria.santos', 3, '2023-11-01', NULL),
+('Reyes', 'Carlos', 'T', 'carlos.reyes@example.com', '09192234567', 'https://m.me/carlos.reyes', 5, '2024-06-10', NULL),
+('Cruz', 'Angela', 'M', 'angela.cruz@example.com', '09201234567', 'https://facebook.com/angela.cruz', 7, '2025-01-05', NULL),
+('Gomez', 'Joseph', 'P', 'joseph.gomez@example.com', '09211234567', 'https://m.me/joseph.gomez', 9, '2024-03-20', NULL),
+('Torres', 'Anna', 'S', 'anna.torres@example.com', '09221234567', 'https://facebook.com/anna.torres', 11, '2023-09-12', NULL),
+('Lopez', 'Daniel', 'V', 'daniel.lopez@example.com', '09231234567', 'https://m.me/daniel.lopez', 13, '2024-10-01', NULL),
+('Garcia', 'Leah', 'C', 'leah.garcia@example.com', '09241234567', 'https://facebook.com/leah.garcia', 15, '2024-05-18', NULL),
+('Navarro', 'Miguel', 'D', 'miguel.navarro@example.com', '09251234567', 'https://m.me/miguel.navarro', 17, '2023-12-07', NULL),
+('Ramos', 'Patricia', 'E', 'patricia.ramos@example.com', '09261234567', 'https://facebook.com/patricia.ramos', 19, '2024-08-25', NULL);
 
 -- Foreign key constraint to units table
 ALTER TABLE `jj_apartments`.`units`
