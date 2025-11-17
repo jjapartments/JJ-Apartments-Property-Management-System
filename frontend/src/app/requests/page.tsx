@@ -9,6 +9,7 @@ import {
     SelectContent,
     SelectItem,
 } from "@/components/ui/select";
+import { ReceiptModal } from "@/components/receipt-modal";
 
 declare global {
     interface Window {
@@ -27,7 +28,21 @@ type Unit = {
 };
 
 export default function RequestsPage() {
-    const [formData, setFormData] = useState({ unitId: "", category: "" });
+    const [formData, setFormData] = useState({
+        apartment: "",
+        name: "",
+        phone: "",
+        email: "",
+        messenger: "",
+        category: "",
+        subject: "",
+        description: "",
+    });
+
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+    const [receiptOpen, setReceiptOpen] = useState(false);
+    const [receiptData, setReceiptData] = useState({ id: "", timestamp: "" });
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -40,18 +55,93 @@ export default function RequestsPage() {
         }, 500);
     }, []);
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleChange = (field: string, value: string) => {
+        setFormData({ ...formData, [field]: value });
+    };
+
+    const validate = () => {
+        const newErrors: { [key: string]: string } = {};
+        if (!formData.apartment.trim()) newErrors.apartment = "Required";
+        if (!formData.name.trim()) newErrors.name = "Required";
+        if (!formData.phone.trim()) newErrors.phone = "Required";
+        if (!formData.category.trim()) newErrors.category = "Required";
+        if (!formData.subject.trim()) newErrors.subject = "Required";
+        if (!formData.description.trim()) newErrors.description = "Required";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        const token = window.grecaptcha.getResponse();
+        if (!validate()) {
+            alert("Please fill all required fields!");
+            return;
+        }
 
+        const token = window.grecaptcha.getResponse();
         if (!token) {
             alert("Please complete the CAPTCHA!");
             return;
         }
 
-        console.log("Captcha token:", token);
-        // Send formData + token to backend
+        const payload = {
+            apartmentName: formData.apartment,
+            name: formData.name,
+            phoneNumber: formData.phone,
+            email: formData.email,
+            messengerLink: formData.messenger,
+            category: formData.category,
+            subject: formData.subject,
+            body: formData.description,
+            captchaToken: token,
+            submittedAt: new Date().toISOString(),
+        };
+
+        console.log("Payload:", payload);
+
+        try {
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/submit`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.error || "Failed to submit ticket");
+                console.error("Backend error:", data);
+                return;
+            }
+
+            setReceiptData({ id: data.id, timestamp: data.submittedAt });
+            setReceiptOpen(true);
+
+            console.log("Backend response:", data);
+            alert("Ticket submitted successfully!");
+
+            setFormData({
+                apartment: "",
+                name: "",
+                phone: "",
+                email: "",
+                messenger: "",
+                category: "",
+                subject: "",
+                description: "",
+            });
+            window.grecaptcha.reset();
+        } catch (error) {
+            console.error("Error submitting ticket:", error);
+            alert("An error occurred. Please try again.");
+        }
     };
 
     return (
@@ -61,15 +151,13 @@ export default function RequestsPage() {
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat filter blur-[2px] saturate-50"
                 style={{ backgroundImage: "url('/apartment.png')" }}
             />
-
             {/* Load reCAPTCHA script */}
             <Script
                 src="https://www.google.com/recaptcha/api.js"
                 strategy="afterInteractive"
             />
-
             {/* Form Container */}
-            <div className="relative z-10 flex w-full justify-center item-center pt-20 pb-20 px-5">
+            <div className="relative z-10 flex items-center justify-center min-h-screen pt-10 pb-10 px-5">
                 <form
                     className="w-full max-w-4xl rounded-2xl bg-white p-10 shadow-2xl"
                     onSubmit={handleSubmit}
@@ -84,23 +172,39 @@ export default function RequestsPage() {
                     <FormInput
                         label="Apartment and Unit Number"
                         placeholder="Unit A - Maple Residences"
+                        value={formData.apartment}
+                        onChange={(v) => handleChange("apartment", v)}
                         required
+                        error={errors.apartment}
                     />
                     <FormInput
                         label="Name"
                         placeholder="Juan Dela Cruz"
+                        value={formData.name}
+                        onChange={(v) => handleChange("name", v)}
                         required
+                        error={errors.name}
                     />
                     <FormInput
                         label="Phone Number"
                         placeholder="09123456789"
+                        value={formData.phone}
+                        onChange={(v) => handleChange("phone", v)}
                         required
+                        error={errors.phone}
                     />
                     <FormInput
                         label="Email"
-                        placeholder="jdelacruz@gmail.com"
+                        placeholder="jdela@gmail.com"
+                        value={formData.email}
+                        onChange={(v) => handleChange("email", v)}
                     />
-                    <FormInput label="Messenger Link" placeholder="jdela.com" />
+                    <FormInput
+                        label="Messenger Link"
+                        placeholder="jdela.com"
+                        value={formData.messenger}
+                        onChange={(v) => handleChange("messenger", v)}
+                    />
 
                     <hr className="border-gray-300 mb-6 mt-6" />
 
@@ -114,13 +218,10 @@ export default function RequestsPage() {
                             <Select
                                 value={formData.category || ""}
                                 onValueChange={(value) =>
-                                    setFormData({
-                                        ...formData,
-                                        category: value,
-                                    })
+                                    handleChange("category", value)
                                 }
                             >
-                                <SelectTrigger className="w-full md:w-3/4 min-h-8 rounded-md border border-gray-300 px-2 py-1 text-left text-sm">
+                                <SelectTrigger className="w-full md:w-3/4 min-h-6 rounded-md border border-gray-300 px-2 py-1 text-left text-sm">
                                     <SelectValue placeholder="Select Category" />
                                 </SelectTrigger>
 
@@ -148,13 +249,19 @@ export default function RequestsPage() {
                     <FormInput
                         label="Subject"
                         placeholder="Subject here..."
+                        value={formData.subject}
+                        onChange={(v) => handleChange("subject", v)}
                         required
+                        error={errors.subject}
                     />
                     <FormInput
                         label="Description"
-                        type="textarea"
                         placeholder="Description here..."
+                        type="textarea"
+                        value={formData.description}
+                        onChange={(v) => handleChange("description", v)}
                         required
+                        error={errors.description}
                     />
 
                     <hr className="border-gray-300 mb-6 mt-6" />
@@ -179,6 +286,13 @@ export default function RequestsPage() {
                     </div>
                 </form>
             </div>
+
+            <ReceiptModal
+                open={receiptOpen}
+                requestId={receiptData.id}
+                timestamp={receiptData.timestamp}
+                onClose={() => setReceiptOpen(false)}
+            />
         </div>
     );
 }
@@ -186,14 +300,20 @@ export default function RequestsPage() {
 // Reusable input component
 const FormInput = ({
     label,
+    value,
+    onChange,
     type = "text",
     placeholder,
     required = false,
+    error,
 }: {
     label: string;
+    value: string;
+    onChange: (val: string) => void;
     type?: string;
-    placeholder: string;
+    placeholder?: string;
     required?: boolean;
+    error?: string;
 }) => {
     return (
         <div className="w-full mb-3 px-2">
@@ -208,6 +328,8 @@ const FormInput = ({
                         placeholder={placeholder}
                         required={required}
                         rows={4}
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
                         className="w-full md:w-3/4 rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y"
                     />
                 ) : (
@@ -215,10 +337,13 @@ const FormInput = ({
                         type={type}
                         placeholder={placeholder}
                         required={required}
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
                         className="w-full md:w-3/4 rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                 )}
             </div>
+            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
         </div>
     );
 };
