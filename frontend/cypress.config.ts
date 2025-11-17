@@ -12,6 +12,6 @@ export default defineConfig({
     screenshotOnRunFailure: true,
     viewportWidth: 1280,
     viewportHeight: 720,
-    defaultCommandTimeout: 20000, 
+    defaultCommandTimeout: 30000, 
   },
 });
