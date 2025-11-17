@@ -144,7 +144,7 @@ export default function SignUpPage() {
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <Image 
-              src="/JJ Apartments Logo.png" 
+              src="/JJ-Apartments-Logo.png" 
               alt="JJ Apartments Logo" 
               width={250}
               height={80}
