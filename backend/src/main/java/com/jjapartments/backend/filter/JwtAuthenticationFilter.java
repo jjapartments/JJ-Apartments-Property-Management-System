@@ -40,7 +40,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Public endpoints (no JWT required)
         if (path.equals("/api/users/login") ||
                 path.equals("/api/users/add") ||
-                path.equals("/api/requests/submit") ||
                 path.equals("/api/tickets/submit") ||
                 path.equals("/actuator/health")) {
 
