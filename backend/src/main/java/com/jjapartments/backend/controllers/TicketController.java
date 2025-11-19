@@ -78,6 +78,29 @@ public class TicketController {
         }
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getById(@PathVariable String id) {
+        int ticketId;
+        try {
+            ticketId = Integer.parseInt(id);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Invalid ticket ID"));
+        }
+
+        try {
+            Optional<Ticket> opt = ticketRepository.findById(ticketId);
+            if (opt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Ticket not found"));
+            }
+            return ResponseEntity.ok(opt.get());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An internal server error occurred while fetching the ticket."));
+        }
+    }
+
     private boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
     }
