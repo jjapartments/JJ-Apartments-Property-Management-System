@@ -93,48 +93,48 @@ public class TicketController {
         }
 
         try {
-            Optional<Ticket> opt = ticketRepository.findById(ticketId);
-            if (opt.isEmpty()) {
+            Ticket ticket = ticketRepository.findById(ticketId);
+            if (ticket == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Ticket not found"));
             }
-            return ResponseEntity.ok(opt.get());
+
+            return ResponseEntity.ok(ticket);
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "An internal server error occurred while fetching the ticket."));
         }
     }
 
+
     @GetMapping("")
     public ResponseEntity<?> getTickets(@RequestParam(required = false) String status) {
         try {
-            // No status provided → return all tickets ordered by most recent first
-            if (status == null || status.trim().isEmpty()) {
-                List<Ticket> tickets = ticketRepository.findAllByOrderBySubmittedAtDesc();
+            
+            if (status == null || status.isBlank()) {
+                List<Ticket> tickets = ticketRepository.findAll();
                 return ResponseEntity.ok(tickets);
             }
 
-            // Normalize status value
-            String normalized = status.trim().toUpperCase().replace(" ", "_");
-
-            // Convert to enum or return 400 if invalid
             Status enumStatus;
             try {
-                enumStatus = Status.valueOf(normalized);
+                enumStatus = Status.valueOf(status.trim().toUpperCase().replace(" ", "_"));
             } catch (IllegalArgumentException ex) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "Invalid status. Must be one of: Pending, In Progress, Resolved, Closed"));
+                        .body(Map.of("error",
+                                "Invalid status. Must be one of: Pending, In Progress, Resolved, Closed"));
             }
 
-            // Return filtered and ordered ticket list
-            List<Ticket> tickets = ticketRepository.findByStatusOrderBySubmittedAtDesc(enumStatus);
+            List<Ticket> tickets = ticketRepository.findByStatus(enumStatus);
             return ResponseEntity.ok(tickets);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "An internal server error occurred while fetching tickets."));
+                    .body(Map.of("error", "Unexpected server error."));
         }
     }
+
 
 
     private boolean isBlank(String s) {
