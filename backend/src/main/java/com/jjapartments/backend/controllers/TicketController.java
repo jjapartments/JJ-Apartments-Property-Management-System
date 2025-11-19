@@ -10,8 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.Map;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -100,6 +104,38 @@ public class TicketController {
                     .body(Map.of("error", "An internal server error occurred while fetching the ticket."));
         }
     }
+
+    @GetMapping("")
+    public ResponseEntity<?> getTickets(@RequestParam(required = false) String status) {
+        try {
+            // No status provided → return all tickets ordered by most recent first
+            if (status == null || status.trim().isEmpty()) {
+                List<Ticket> tickets = ticketRepository.findAllByOrderBySubmittedAtDesc();
+                return ResponseEntity.ok(tickets);
+            }
+
+            // Normalize status value
+            String normalized = status.trim().toUpperCase().replace(" ", "_");
+
+            // Convert to enum or return 400 if invalid
+            Status enumStatus;
+            try {
+                enumStatus = Status.valueOf(normalized);
+            } catch (IllegalArgumentException ex) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Invalid status. Must be one of: Pending, In Progress, Resolved, Closed"));
+            }
+
+            // Return filtered and ordered ticket list
+            List<Ticket> tickets = ticketRepository.findByStatusOrderBySubmittedAtDesc(enumStatus);
+            return ResponseEntity.ok(tickets);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An internal server error occurred while fetching tickets."));
+        }
+    }
+
 
     private boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
