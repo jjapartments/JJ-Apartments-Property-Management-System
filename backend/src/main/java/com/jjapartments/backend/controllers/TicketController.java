@@ -10,8 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.Map;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -77,6 +81,61 @@ public class TicketController {
                     .body(Map.of("error", "An internal server error occurred while submitting the ticket."));
         }
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getById(@PathVariable String id) {
+        int ticketId;
+        try {
+            ticketId = Integer.parseInt(id);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Invalid ticket ID"));
+        }
+
+        try {
+            Ticket ticket = ticketRepository.findById(ticketId);
+            if (ticket == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Ticket not found"));
+            }
+
+            return ResponseEntity.ok(ticket);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An internal server error occurred while fetching the ticket."));
+        }
+    }
+
+
+    @GetMapping("")
+    public ResponseEntity<?> getTickets(@RequestParam(required = false) String status) {
+        try {
+            
+            if (status == null || status.isBlank()) {
+                List<Ticket> tickets = ticketRepository.findAll();
+                return ResponseEntity.ok(tickets);
+            }
+
+            Status enumStatus;
+            try {
+                enumStatus = Status.valueOf(status.trim().toUpperCase().replace(" ", "_"));
+            } catch (IllegalArgumentException ex) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error",
+                                "Invalid status. Must be one of: Pending, In Progress, Resolved, Closed"));
+            }
+
+            List<Ticket> tickets = ticketRepository.findByStatus(enumStatus);
+            return ResponseEntity.ok(tickets);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Unexpected server error."));
+        }
+    }
+
+
 
     private boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
