@@ -137,7 +137,7 @@ export function TicketItem({ ticket, onView }: TicketItemProps) {
                                 {ticket.unitNumber} - {ticket.apartmentName}
                             </span>
                             <span>
-                                {ticket.submittedAt.toLocaleDateString()}
+                                {ticket.submittedAt.toLocaleString()}
                             </span>
                         </div>
                     </div>

@@ -90,7 +90,7 @@ export function TicketDetail({ open, ticket, onClose, currentUser }: TicketModal
                             <div>
                                 {ticket.unitNumber} - {ticket.apartmentName}
                             </div>
-                            <div>{ticket.submittedAt.toLocaleDateString()}</div>
+                            <div>{ticket.submittedAt.toLocaleString()}</div>
                         </div>
                     </DialogHeader>
 
