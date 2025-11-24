@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Script from "next/script";
 import {
     Select,
@@ -44,6 +44,27 @@ export default function RequestsPage() {
     const [receiptOpen, setReceiptOpen] = useState(false);
     const [receiptData, setReceiptData] = useState({ id: "", timestamp: "" });
 
+    // ----- reCAPTCHA refs & state -----
+    const recaptchaRef = useRef<HTMLDivElement>(null);
+    const [recaptchaReady, setRecaptchaReady] = useState(false);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (window.grecaptcha && window.grecaptcha.render) {
+                setRecaptchaReady(true);
+                clearInterval(interval);
+
+                if (recaptchaRef.current) {
+                    window.grecaptcha.render(recaptchaRef.current, {
+                        sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!,
+                    });
+                }
+            }
+        }, 100);
+
+        return () => clearInterval(interval);
+    }, []);
+
     const handleChange = (field: string, value: string) => {
         setFormData({ ...formData, [field]: value });
     };
@@ -70,6 +91,11 @@ export default function RequestsPage() {
             return;
         }
 
+        if (!recaptchaReady) {
+            alert("reCAPTCHA is still loading, please wait...");
+            return;
+        }
+
         const token = window.grecaptcha.getResponse();
         if (!token) {
             alert("Please complete the CAPTCHA!");
@@ -91,8 +117,6 @@ export default function RequestsPage() {
                 submittedAt: new Date().toISOString(),
             },
         };
-
-        console.log("Payload:", payload);
 
         try {
             const response = await fetch(
@@ -122,7 +146,7 @@ export default function RequestsPage() {
                 year: "numeric",
                 hour: "2-digit",
                 minute: "2-digit",
-                hour12: true, // AM/PM
+                hour12: true,
             });
 
             setReceiptData({
@@ -131,10 +155,9 @@ export default function RequestsPage() {
             });
 
             setReceiptOpen(true);
-
-            console.log("Backend response:", data);
             alert("Ticket submitted successfully!");
 
+            // reset form
             setFormData({
                 unit: "",
                 apartment: "",
@@ -146,6 +169,7 @@ export default function RequestsPage() {
                 subject: "",
                 description: "",
             });
+
             window.grecaptcha.reset();
         } catch (error) {
             console.error("Error submitting ticket:", error);
@@ -160,22 +184,16 @@ export default function RequestsPage() {
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat filter blur-[2px] saturate-50"
                 style={{ backgroundImage: "url('/apartment.png')" }}
             />
-            {/* Load reCAPTCHA script */}
-            <Script
-                src="https://www.google.com/recaptcha/api.js"
-                strategy="afterInteractive"
-            />
+
             {/* Form Container */}
             <div className="relative z-10 flex items-center justify-center min-h-screen pt-10 pb-10 px-5">
                 <form
                     className="w-full max-w-4xl rounded-2xl bg-white p-10 shadow-2xl"
                     onSubmit={handleSubmit}
                 >
-                    <div className="flex justify-between items-end mb-4">
-                        <h1 className="text-2xl font-bold">Request Form</h1>
-                    </div>
+                    <h1 className="text-2xl font-bold mb-6">Request Form</h1>
 
-                    <hr className="border-gray-300 mb-6" />
+                    <hr className="border-gray-300 mb-6 mt-6" />
 
                     {/* Inputs */}
                     <FormInput
@@ -225,7 +243,7 @@ export default function RequestsPage() {
 
                     <hr className="border-gray-300 mb-6 mt-6" />
 
-                    {/* Category Select */}
+                    {/* Category */}
                     <div className="w-full mb-3 px-2">
                         <div className="flex flex-col md:flex-row md:items-center">
                             <label className="text-sm font-medium text-gray-700 mb-1 md:mb-0 md:w-1/4 text-left md:text-right mr-3">
@@ -241,7 +259,6 @@ export default function RequestsPage() {
                                 <SelectTrigger className="w-full md:w-3/4 min-h-6 rounded-md border border-gray-300 px-2 py-1 text-left text-sm">
                                     <SelectValue placeholder="Select Category" />
                                 </SelectTrigger>
-
                                 <SelectContent className="w-full md:w-3/4">
                                     {[
                                         "Maintenance & Repairs",
@@ -251,10 +268,7 @@ export default function RequestsPage() {
                                         "Amenities & Facilities",
                                         "Others",
                                     ].map((category, index) => (
-                                        <SelectItem
-                                            key={index}
-                                            value={category}
-                                        >
+                                        <SelectItem key={index} value={category}>
                                             {category}
                                         </SelectItem>
                                     ))}
@@ -283,16 +297,13 @@ export default function RequestsPage() {
 
                     <hr className="border-gray-300 mb-6 mt-6" />
 
-                    {/* CAPTCHA and Submit */}
-                    <div className="w-full flex flex-col md:flex-row justify-between items-center px-2 gap-4 md:gap-0">
+                    {/* CAPTCHA + Submit */}
+                    <div className="w-full flex flex-col md:flex-row justify-between items-center px-2 gap-4 md:gap-0 mt-4">
                         <div
+                            ref={recaptchaRef}
                             className="g-recaptcha w-full md:w-1/2 transform scale-85 origin-top-left items-center"
-                            data-sitekey={
-                                process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-                            }
                         ></div>
 
-                        {/* Submit Button */}
                         <div className="w-full md:w-1/2 flex justify-start md:justify-end items-center">
                             <button
                                 type="submit"
@@ -311,6 +322,9 @@ export default function RequestsPage() {
                 timestamp={receiptData.timestamp}
                 onClose={() => setReceiptOpen(false)}
             />
+
+            {/* Load reCAPTCHA script lazily */}
+            <Script src="https://www.google.com/recaptcha/api.js" strategy="afterInteractive" />
         </div>
     );
 }
@@ -337,10 +351,8 @@ const FormInput = ({
         <div className="w-full mb-3 px-2">
             <div className="flex flex-col md:flex-row md:items-start">
                 <label className="text-sm w-full font-medium text-gray-700 mb-1 md:mb-0 md:w-1/4 text-left md:text-right mr-3">
-                    {label}{" "}
-                    {required && <span className="text-red-500">*</span>}
+                    {label} {required && <span className="text-red-500">*</span>}
                 </label>
-
                 {type === "textarea" ? (
                     <textarea
                         placeholder={placeholder}

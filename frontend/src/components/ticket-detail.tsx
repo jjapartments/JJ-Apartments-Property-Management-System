@@ -44,11 +44,12 @@ type TicketModalProps = {
 };
 
 export function TicketDetail({ open, ticket, onClose, currentUser }: TicketModalProps) {
+    const [status, setStatus] = useState(ticket.status);
+    const [showConfirm, setShowConfirm] = useState(false);
+
     if (!ticket) return null;
 
     const reqNum = `REQ-${ticket.id.toString().padStart(6, "0")}`;
-    const [status, setStatus] = useState(ticket.status);
-    const [showConfirm, setShowConfirm] = useState(false);
     
 
     const hasUnsavedChanges = status !== ticket.status;

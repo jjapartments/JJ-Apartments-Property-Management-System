@@ -39,9 +39,15 @@ export function TicketList({ searchQuery, statusFilter }: TicketListProps) {
         const fetchTickets = async () => {
             try {
                 const response = await api.get("/api/tickets");
+                console.log("Fetched tickets; ", response);
 
-                // Print the raw API response
-                console.log("Fetched tickets:", response.data);
+                const ticketsWithDates = response.map((ticket: any) => ({
+                ...ticket,
+                submittedAt: new Date(ticket.submittedAt),
+                statusUpdatedAt: new Date(ticket.statusUpdatedAt),
+            }));
+
+                setTickets(ticketsWithDates);
             } catch (error) {
                 console.error("Failed to fetch tickets:", error);
             }

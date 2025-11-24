@@ -24,7 +24,7 @@ export default function RequestTicketsPage() {
                                 Request Ticket Management
                             </h1>
                             <p className="text-sm text-gray-600 mt-1">
-                                Manage your tenants' tickets
+                                Manage your tenants&apos; tickets
                             </p>
                         </div>
 
