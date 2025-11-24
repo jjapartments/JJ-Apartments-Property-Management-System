@@ -1,17 +1,24 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 import { TicketList } from "@/components/ticket-list";
+import {
+    Select,
+    SelectTrigger,
+    SelectValue,
+    SelectContent,
+    SelectItem,
+} from "@/components/ui/select";
 
 export default function RequestTicketsPage() {
     const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all"); 
 
     return (
         <div className="flex-1 flex flex-col min-h-screen">
             <header className="bg-white shadow-sm border-b">
                 <div className="px-6 py-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-4">
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">
                                 Request Ticket Management
@@ -20,19 +27,53 @@ export default function RequestTicketsPage() {
                                 Manage your tenants' tickets
                             </p>
                         </div>
-                        <input
-                            type="text"
-                            placeholder="Search ticket number..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 w-150"
-                        />
+
+                        <div className="flex gap-2 items-center">
+                            <input
+                                type="text"
+                                placeholder="Search by request ID..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 w-48"
+                            />
+
+                            <div className="flex flex-col">
+                                <Select
+                                    value={statusFilter}
+                                    onValueChange={(value) => setStatusFilter(value)}
+                                >
+                                    <SelectTrigger className="min-w-[180px] rounded-md border border-gray-300 px-3 py-2 text-sm">
+                                        <SelectValue placeholder="Select Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All Status
+                                        </SelectItem>
+                                        <SelectItem value="Pending">
+                                            Pending
+                                        </SelectItem>
+                                        <SelectItem value="In Progress">
+                                            In Progress
+                                        </SelectItem>
+                                        <SelectItem value="Resolved">
+                                            Resolved
+                                        </SelectItem>
+                                        <SelectItem value="Closed">
+                                            Closed
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
 
             <div className="flex flex-1">
-                <TicketList />
+                <TicketList
+                    searchQuery={searchQuery}
+                    statusFilter={statusFilter}
+                />
             </div>
         </div>
     );

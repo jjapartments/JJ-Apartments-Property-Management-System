@@ -10,8 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.Map;
 import java.util.List;
@@ -110,6 +108,7 @@ public class TicketController {
 
     @GetMapping("")
     public ResponseEntity<?> getTickets(@RequestParam(required = false) String status) {
+        System.out.println("iwenthere");
         try {
             
             if (status == null || status.isBlank()) {
@@ -127,6 +126,7 @@ public class TicketController {
             }
 
             List<Ticket> tickets = ticketRepository.findByStatus(enumStatus);
+            System.out.println(tickets);
             return ResponseEntity.ok(tickets);
 
         } catch (Exception e) {

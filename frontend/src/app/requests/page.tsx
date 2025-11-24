@@ -44,8 +44,6 @@ export default function RequestsPage() {
     const [receiptOpen, setReceiptOpen] = useState(false);
     const [receiptData, setReceiptData] = useState({ id: "", timestamp: "" });
 
-    // NOTE: i removed the recaptcha manual render, reCAPTCHA auto-renders
-
     const handleChange = (field: string, value: string) => {
         setFormData({ ...formData, [field]: value });
     };

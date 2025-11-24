@@ -25,15 +25,15 @@ type Ticket = {
     apartmentName: string;
     name: string;
     phoneNumber: string;
-    email: string;
-    messengerLink: string;
+    email: string | null;
+    messengerLink: string | null;
     category: string;
     subject: string;
     body: string;
     status: string;
     submittedAt: Date;
     statusUpdatedAt: Date;
-    statusUpdatedBy: string;
+    statusUpdatedBy: string | null;
 };
 
 type TicketModalProps = {
@@ -63,7 +63,7 @@ export function TicketDetail({ open, ticket, onClose, currentUser }: TicketModal
         console.log("Status updated to:", status);
         ticket.status = status;
         ticket.statusUpdatedAt = new Date();
-        ticket.statusUpdatedBy = "Current User";
+        ticket.statusUpdatedBy = currentUser;
 
         const payload = {
             ...ticket, 
