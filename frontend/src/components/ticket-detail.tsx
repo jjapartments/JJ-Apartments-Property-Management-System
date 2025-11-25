@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { StatusConfirmModal } from "./status-confirm";
-
+import { useRouter } from "next/navigation";
 
 type Ticket = {
     id: number;
@@ -43,15 +43,19 @@ type TicketModalProps = {
     currentUser: string;
 };
 
-export function TicketDetail({ open, ticket, onClose, currentUser }: TicketModalProps) {
+export function TicketDetail({
+    open,
+    ticket,
+    onClose,
+    currentUser,
+}: TicketModalProps) {
     const [status, setStatus] = useState(ticket.status);
     const [showConfirm, setShowConfirm] = useState(false);
+    const router = useRouter();
 
     if (!ticket) return null;
 
     const reqNum = `REQ-${ticket.id.toString().padStart(6, "0")}`;
-    
-
     const hasUnsavedChanges = status !== ticket.status;
 
     const handleSaveClick = () => {
@@ -61,15 +65,20 @@ export function TicketDetail({ open, ticket, onClose, currentUser }: TicketModal
     };
 
     const handleConfirmStatusChange = () => {
+        if (!currentUser) {
+            alert("Please log in first.");
+            router.replace("/admin-portal/dashboard");
+        }
+
         console.log("Status updated to:", status);
         ticket.status = status;
         ticket.statusUpdatedAt = new Date();
         ticket.statusUpdatedBy = currentUser;
 
         const payload = {
-            ...ticket, 
-            statusUpdatedAt: new Date(), 
-            statusUpdatedBy: currentUser || "Unknown User",
+            ...ticket,
+            statusUpdatedAt: new Date(),
+            statusUpdatedBy: currentUser,
         };
         console.log("Updating ticket with payload:", payload);
 

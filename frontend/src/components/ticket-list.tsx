@@ -42,10 +42,10 @@ export function TicketList({ searchQuery, statusFilter }: TicketListProps) {
                 console.log("Fetched tickets; ", response);
 
                 const ticketsWithDates = response.map((ticket: any) => ({
-                ...ticket,
-                submittedAt: new Date(ticket.submittedAt),
-                statusUpdatedAt: new Date(ticket.statusUpdatedAt),
-            }));
+                    ...ticket,
+                    submittedAt: new Date(ticket.submittedAt),
+                    statusUpdatedAt: new Date(ticket.statusUpdatedAt),
+                }));
 
                 setTickets(ticketsWithDates);
             } catch (error) {
@@ -136,9 +136,7 @@ export function TicketItem({ ticket, onView }: TicketItemProps) {
                             <span>
                                 {ticket.unitNumber} - {ticket.apartmentName}
                             </span>
-                            <span>
-                                {ticket.submittedAt.toLocaleString()}
-                            </span>
+                            <span>{ticket.submittedAt.toLocaleString()}</span>
                         </div>
                     </div>
                 </div>

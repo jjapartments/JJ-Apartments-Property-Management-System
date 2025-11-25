@@ -108,7 +108,6 @@ public class TicketController {
 
     @GetMapping("")
     public ResponseEntity<?> getTickets(@RequestParam(required = false) String status) {
-        System.out.println("iwenthere");
         try {
             
             if (status == null || status.isBlank()) {
@@ -126,9 +125,7 @@ public class TicketController {
             }
 
             List<Ticket> tickets = ticketRepository.findByStatus(enumStatus);
-            System.out.println(tickets);
             return ResponseEntity.ok(tickets);
-
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Unexpected server error."));
