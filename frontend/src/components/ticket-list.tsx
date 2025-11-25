@@ -71,9 +71,19 @@ export function TicketList({ searchQuery, statusFilter }: TicketListProps) {
 
     return (
         <div className="flex-1 bg-gray-50 p-6 overflow-auto">
-            {filteredTickets.map((t) => (
-                <TicketItem key={t.id} ticket={t} onView={handleViewTicket} />
-            ))}
+            {filteredTickets.length === 0 ? (
+                <div className="w-full text-center py-20 text-gray-500 text-lg italic">
+                    No tickets available...
+                </div>
+            ) : (
+                filteredTickets.map((t) => (
+                    <TicketItem
+                        key={t.id}
+                        ticket={t}
+                        onView={handleViewTicket}
+                    />
+                ))
+            )}
 
             {selectedTicket && (
                 <TicketDetail
