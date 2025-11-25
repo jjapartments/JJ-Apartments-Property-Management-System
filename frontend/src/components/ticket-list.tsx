@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { TicketDetail } from "./ticket-detail";
 import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
+import { useDataRefresh } from "@/contexts/DataContext";
 
 type Ticket = {
     id: number;
@@ -33,6 +34,8 @@ export function TicketList({ searchQuery, statusFilter }: TicketListProps) {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
     const { username: currentUser } = useAuth();
+
+    const { triggerRefresh } = useDataRefresh();
 
     const now = new Date();
     useEffect(() => {
@@ -91,6 +94,12 @@ export function TicketList({ searchQuery, statusFilter }: TicketListProps) {
                     ticket={selectedTicket}
                     currentUser={currentUser}
                     onClose={() => setIsViewModalOpen(false)}
+                    onTicketUpdated={(updated) => {
+                        setSelectedTicket(updated);
+                        setTickets((prev) =>
+                            prev.map((t) => (t.id === updated.id ? updated : t))
+                        );
+                    }}
                 />
             )}
         </div>
@@ -155,8 +164,10 @@ export function TicketItem({ ticket, onView }: TicketItemProps) {
                 <div className="flex items-center gap-2">
                     <span
                         className={`px-4 py-2 rounded-full text-sm font-medium ${
-                            categoryColors[ticket.category] ||
-                            "bg-gray-100 text-gray-700"
+                            isClosed
+                                ? "bg-gray-100 text-gray-500" 
+                                : categoryColors[ticket.category] || 
+                                  "bg-gray-100 text-gray-700"
                         }`}
                     >
                         {ticket.category}

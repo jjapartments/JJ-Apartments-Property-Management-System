@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -18,6 +18,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusConfirmModal } from "./status-confirm";
 import { useRouter } from "next/navigation";
+import { api, ApiError } from "@/lib/api";
+import { useDataRefresh } from "@/contexts/DataContext";
 
 type Ticket = {
     id: number;
@@ -41,6 +43,7 @@ type TicketModalProps = {
     ticket: Ticket;
     onClose: () => void;
     currentUser: string;
+    onTicketUpdated: (ticket: Ticket) => void;
 };
 
 export function TicketDetail({
@@ -48,15 +51,27 @@ export function TicketDetail({
     ticket,
     onClose,
     currentUser,
+    onTicketUpdated,
 }: TicketModalProps) {
     const [status, setStatus] = useState(ticket.status);
     const [showConfirm, setShowConfirm] = useState(false);
     const router = useRouter();
+    const { triggerRefresh } = useDataRefresh();
+
+    const [currTicket, setCurrTicket] = useState(ticket);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     if (!ticket) return null;
 
     const reqNum = `REQ-${ticket.id.toString().padStart(6, "0")}`;
-    const hasUnsavedChanges = status !== ticket.status;
+
+    useEffect(() => {
+        if (open) {
+            setStatus(ticket.status);
+            setCurrTicket(ticket);
+            setHasUnsavedChanges(false);
+        }
+    }, [open, ticket]);
 
     const handleSaveClick = () => {
         if (hasUnsavedChanges) {
@@ -64,27 +79,54 @@ export function TicketDetail({
         }
     };
 
-    const handleConfirmStatusChange = () => {
+    const handleConfirmStatusChange = async () => {
         if (!currentUser) {
             alert("Please log in first.");
             router.replace("/admin-portal/dashboard");
+            return;
         }
 
         console.log("Status updated to:", status);
-        ticket.status = status;
-        ticket.statusUpdatedAt = new Date();
-        ticket.statusUpdatedBy = currentUser;
 
         const payload = {
-            ...ticket,
-            statusUpdatedAt: new Date(),
+            status: status,
+            statusUpdatedAt: new Date().toISOString(),
             statusUpdatedBy: currentUser,
         };
-        console.log("Updating ticket with payload:", payload);
 
-        // API call here
+        console.log("Sending payload:", payload);
 
-        setShowConfirm(false);
+        try {
+            const response = await api.patch(
+                `/api/tickets/${ticket.id}/status`,
+                payload
+            );
+
+            console.log("Status updated:", response);
+            alert("Status updated successfully!");
+
+            setCurrTicket(response);
+            setStatus(status);
+
+            triggerRefresh();
+            onTicketUpdated?.(response);
+
+            setShowConfirm(false);
+            setHasUnsavedChanges(false);
+        } catch (error) {
+            console.error("Error updating ticket status:", error);
+
+            if (error instanceof ApiError) {
+                const status = error.status;
+                const message = error.message || "Something went wrong.";
+
+                alert(`Error ${status}: ${message}`);
+            } else if (error instanceof Error) {
+                alert(error.message);
+            } else {
+                alert("An unknown error occurred while updating the status.");
+            }
+        }
     };
 
     return (
@@ -93,13 +135,14 @@ export function TicketDetail({
                 <DialogContent className="sm:max-w-4xl p-6">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-semibold">
-                            {reqNum}: {ticket.subject}
+                            {reqNum}: {currTicket.subject}
                         </DialogTitle>
                         <div className="flex gap-8 text-gray-600 text-sm">
                             <div>
-                                {ticket.unitNumber} - {ticket.apartmentName}
+                                {currTicket.unitNumber} -{" "}
+                                {currTicket.apartmentName}
                             </div>
-                            <div>{ticket.submittedAt.toLocaleString()}</div>
+                            <div>{currTicket.submittedAt.toLocaleString()}</div>
                         </div>
                     </DialogHeader>
 
@@ -107,7 +150,7 @@ export function TicketDetail({
 
                     {/* Body */}
                     <div className="bg-white border rounded-xl p-4 text-gray-800">
-                        {ticket.body}
+                        {currTicket.body}
                     </div>
 
                     {/* Contact Details */}
@@ -117,23 +160,25 @@ export function TicketDetail({
                         </h3>
                         <div className="bg-gray-50 border rounded-xl p-4 text-gray-800 text-sm space-y-1">
                             <p>
-                                <strong>Name: </strong> {ticket.name}
+                                <strong>Name: </strong> {currTicket.name}
                             </p>
                             <p>
-                                <strong>Phone: </strong> {ticket.phoneNumber}
+                                <strong>Phone: </strong>{" "}
+                                {currTicket.phoneNumber}
                             </p>
                             <p>
-                                <strong>Email: </strong> {ticket.email || "N/A"}
+                                <strong>Email: </strong>{" "}
+                                {currTicket.email || "N/A"}
                             </p>
                             <p>
                                 <strong>Messenger / Facebook Link: </strong>
-                                {ticket.messengerLink ? (
+                                {currTicket.messengerLink ? (
                                     <a
-                                        href={ticket.messengerLink}
+                                        href={currTicket.messengerLink}
                                         className="text-blue-600 underline"
                                         target="_blank"
                                     >
-                                        {ticket.messengerLink}
+                                        {currTicket.messengerLink}
                                     </a>
                                 ) : (
                                     "N/A"
@@ -150,10 +195,13 @@ export function TicketDetail({
                             <p className="font-semibold">Last updated by:</p>
                             <div className="flex gap-8 text-gray-600 text-sm">
                                 <p>
-                                    {ticket.statusUpdatedBy || "No update yet."}
+                                    {currTicket.statusUpdatedBy ||
+                                        "No update yet."}
                                 </p>
                                 <p>
-                                    {ticket.statusUpdatedAt.toLocaleDateString()}
+                                    {new Date(
+                                        currTicket.statusUpdatedAt
+                                    ).toLocaleDateString()}
                                 </p>
                             </div>
                         </div>
@@ -163,7 +211,10 @@ export function TicketDetail({
                             <div className="flex flex-col">
                                 <Select
                                     value={status}
-                                    onValueChange={(value) => setStatus(value)}
+                                    onValueChange={(value) => {
+                                        setStatus(value);
+                                        setHasUnsavedChanges(true);
+                                    }}
                                 >
                                     <SelectTrigger className="min-w-[180px] rounded-md border border-gray-300 px-3 py-2 text-sm">
                                         <SelectValue placeholder="Select Status" />
