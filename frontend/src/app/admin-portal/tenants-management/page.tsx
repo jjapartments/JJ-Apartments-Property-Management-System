@@ -50,8 +50,8 @@ type Unit = {
     description: string;
     max_num: number;
     price: number;
-    
-    activeTenantId: number
+
+    activeTenantId: number;
 };
 
 type TenantWithUnitDetails = Omit<Tenant, "unit"> & {
@@ -89,7 +89,17 @@ export default function TenantsManagementPage() {
         useState<TenantWithUnitDetails | null>(null);
     const [moveOutError, setMoveOutError] = useState<string>("");
 
-    const [tenantFilter, setTenantFilter] = useState<"active" | "movedOut">("active");
+    const [tenantFilter, setTenantFilter] = useState<"active" | "movedOut">(
+        "active"
+    );
+
+    // Tenant Filter
+    const [activeTenants, setActiveTenants] = useState<TenantWithUnitDetails[]>(
+        []
+    );
+    const [movedOutTenants, setMovedOutTenants] = useState<
+        TenantWithUnitDetails[]
+    >([]);
 
     // ================== //
 
@@ -118,7 +128,7 @@ export default function TenantsManagementPage() {
 
     const fetchUnits = async () => {
         try {
-            const data = await api.get("/api/units")
+            const data = await api.get("/api/units");
             setUnits(data);
             console.log("Units loaded:", data);
         } catch (error) {
@@ -153,14 +163,30 @@ export default function TenantsManagementPage() {
                 };
             });
 
-            // Sort
             processedTenants.sort((a, b) => {
+                // Moved-out tenants go to the bottom
                 if (a.moveOutDate && !b.moveOutDate) return 1;
                 if (!a.moveOutDate && b.moveOutDate) return -1;
+
+                // Preserve order for active tenants based on tenant ID
+                if (a.id && b.id) return a.id - b.id;
+
+                // If any ID is missing, keep as is
                 return 0;
             });
 
             setTenants(processedTenants);
+
+            // Separate Active and Moved Out Tenants
+            const active = processedTenants.filter(
+                (t) => t.id !== null && t.moveOutDate === null
+            );
+            const movedOut = processedTenants.filter(
+                (t) => t.id !== null && t.moveOutDate !== null
+            );
+
+            setActiveTenants(active);
+            setMovedOutTenants(movedOut);
         } catch (err) {
             console.error("Error fetching data", err);
         }
@@ -210,7 +236,10 @@ export default function TenantsManagementPage() {
 
             let displayMessage = "Failed to add tenant. Please try again.";
 
-            if (error instanceof ApiError && typeof error.message === "string") {
+            if (
+                error instanceof ApiError &&
+                typeof error.message === "string"
+            ) {
                 displayMessage = error.message;
             }
 
@@ -226,13 +255,13 @@ export default function TenantsManagementPage() {
     };
 
     const handleUpdates = async () => {
-        triggerRefresh(); 
-        fetchTenants(); 
+        triggerRefresh();
+        fetchTenants();
         setIsViewModalOpen(false);
         setTimeout(() => {
             setIsViewModalOpen(true);
         }, 150);
-    }
+    };
 
     const handleMoveOut = (tenant: TenantWithUnitDetails) => {
         console.log(tenant);
@@ -240,14 +269,14 @@ export default function TenantsManagementPage() {
         setIsMoveOutModalOpen(true);
     };
     const confirmMoveOut = async (moveOutDate: string) => {
-        setMoveOutError(""); 
+        setMoveOutError("");
 
         try {
             if (!tenantToMoveOut?.id) {
                 alert("Tenant ID not found.");
                 return;
             }
-            const formattedMoveOutDate = moveOutDate
+            const formattedMoveOutDate = moveOutDate;
 
             await api.patch(`/api/tenants/${tenantToMoveOut.id}/move-out`, {
                 move_out_date: formattedMoveOutDate,
@@ -264,7 +293,10 @@ export default function TenantsManagementPage() {
             alert(`Tenant has moved out on ${formattedDisplayDate}.`);
             console.log("Move out confirmed:", formattedMoveOutDate);
 
-            localStorage.setItem("scrollToTenantId", tenantToMoveOut.id.toString());
+            localStorage.setItem(
+                "scrollToTenantId",
+                tenantToMoveOut.id.toString()
+            );
 
             setIsMoveOutModalOpen(false);
             window.location.reload();
@@ -273,8 +305,8 @@ export default function TenantsManagementPage() {
 
             const displayMessage =
                 error instanceof ApiError
-                ? error.message
-                : "Failed to move out tenant. Please try again.";
+                    ? error.message
+                    : "Failed to move out tenant. Please try again.";
 
             alert(displayMessage);
             setMoveOutError(displayMessage);
@@ -282,7 +314,7 @@ export default function TenantsManagementPage() {
     };
 
     const cancelMoveOut = () => {
-        setMoveOutError("")
+        setMoveOutError("");
         setIsMoveOutModalOpen(false);
     };
 
@@ -302,14 +334,16 @@ export default function TenantsManagementPage() {
 
     useEffect(() => {
         if (refreshTrigger > 0) {
-            console.log("🔄 Refresh triggered — refetching units and tenants...");
+            console.log(
+                "🔄 Refresh triggered — refetching units and tenants..."
+            );
             Promise.all([fetchUnits(), fetchTenants()]);
         }
     }, [refreshTrigger]);
 
     useEffect(() => {
         if (refreshTrigger > 0) {
-            fetchUnitsAndTenants()
+            fetchUnitsAndTenants();
         }
     }, [refreshTrigger]);
 
@@ -327,59 +361,258 @@ export default function TenantsManagementPage() {
         try {
             // Fetch all data concurrently with JWT token automatically added
             const [unitData, tenantData, subtenants] = await Promise.all([
-            api.get<Unit[]>('/api/units'),
-            api.get<any[]>('/api/tenants'),
-            api.get<any[]>('/api/subtenants'),
+                api.get<Unit[]>("/api/units"),
+                api.get<any[]>("/api/tenants"),
+                api.get<any[]>("/api/subtenants"),
             ]);
 
-            const processed: TenantWithUnitDetails[] = unitData.map((u: Unit) => {
-            const tenant = tenantData.find(t => Number(t.unitId) === u.id);
-            const tenantSubs = subtenants.filter(s => s.mainTenantId === tenant?.id);
+            const processed: TenantWithUnitDetails[] = unitData.map(
+                (u: Unit) => {
+                    const tenant = tenantData.find(
+                        (t) => Number(t.unitId) === u.id
+                    );
+                    const tenantSubs = subtenants.filter(
+                        (s) => s.mainTenantId === tenant?.id
+                    );
 
-            if (tenant) {
-                return {
-                id: tenant.id,
-                firstName: tenant.firstName,
-                middleInitial: tenant.middleInitial || null,
-                lastName: tenant.lastName,
-                email: tenant.email,
-                phoneNumber: tenant.phoneNumber,
-                dateAdded: tenant.dateAdded,
-                subTenants: tenantSubs,
-                unit: u,
-                messengerLink: tenant.messengerLink || null,
-                moveInDate: tenant.moveInDate,
-                moveOutDate: tenant.moveOutDate,
-                };
-            } else {
-                return {
-                id: null,
-                firstName: null,
-                middleInitial: null,
-                lastName: null,
-                email: null,
-                phoneNumber: null,
-                dateAdded: null,
-                subTenants: [],
-                unit: u,
-                messengerLink: null,
-                moveInDate: null,
-                moveOutDate: null,
-                } as TenantWithUnitDetails;
-            }
-            });
+                    if (tenant) {
+                        return {
+                            id: tenant.id,
+                            firstName: tenant.firstName,
+                            middleInitial: tenant.middleInitial || null,
+                            lastName: tenant.lastName,
+                            email: tenant.email,
+                            phoneNumber: tenant.phoneNumber,
+                            dateAdded: tenant.dateAdded,
+                            subTenants: tenantSubs,
+                            unit: u,
+                            messengerLink: tenant.messengerLink || null,
+                            moveInDate: tenant.moveInDate,
+                            moveOutDate: tenant.moveOutDate,
+                        };
+                    } else {
+                        return {
+                            id: null,
+                            firstName: null,
+                            middleInitial: null,
+                            lastName: null,
+                            email: null,
+                            phoneNumber: null,
+                            dateAdded: null,
+                            subTenants: [],
+                            unit: u,
+                            messengerLink: null,
+                            moveInDate: null,
+                            moveOutDate: null,
+                        } as TenantWithUnitDetails;
+                    }
+                }
+            );
 
             setFullTenantData(processed);
             setUnits(unitData);
+
+            // Separate Active and Moved Out Tenants
+            const active = processed.filter(
+                (t) => t.id !== null && t.moveOutDate === null
+            );
+            const movedOut = processed.filter(
+                (t) => t.id !== null && t.moveOutDate !== null
+            );
+
+            setActiveTenants(active);
+            setMovedOutTenants(movedOut);
         } catch (err: unknown) {
             const displayMessage =
-            err instanceof ApiError
-                ? err.message
-                : "Error fetching data. Please try again.";
+                err instanceof ApiError
+                    ? err.message
+                    : "Error fetching data. Please try again.";
 
             console.error("fetchUnitsAndTenants error:", err);
             setErrorMessage(displayMessage);
         }
+    };
+
+    // Tenant Card
+    const renderTenantCard = (tenant: TenantWithUnitDetails) => {
+        const isMovedOut = !!tenant.moveOutDate;
+
+        return (
+            <div
+                key={tenant.id}
+                className={`p-6 transition-all duration-200 group ${
+                    isMovedOut
+                        ? "bg-gray-100 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50"
+                        : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50"
+                }`}
+                id={`tenant-${tenant.id}`}
+            >
+                <div className="flex flex-col space-y-4">
+                    {/* Top row: Name, status, buttons */}
+                    <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                {/* Avatar */}
+                                <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center shadow-md">
+                                    <span className="text-yellow-300 font-semibold text-lg">
+                                        {tenant.firstName?.charAt(0)}
+                                        {tenant.lastName?.charAt(0)}
+                                    </span>
+                                </div>
+
+                                {/* Name & status */}
+                                <div>
+                                    <h3
+                                        className={`font-semibold text-lg transition-colors ${
+                                            isMovedOut
+                                                ? "text-gray-900"
+                                                : "text-gray-900 group-hover:text-blue-900"
+                                        }`}
+                                    >
+                                        {formatName(
+                                            tenant.firstName || "",
+                                            tenant.lastName || "",
+                                            tenant.middleInitial || ""
+                                        )}
+                                    </h3>
+                                    <div className="flex items-center space-x-2 mt-1">
+                                        {isMovedOut ? (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-700">
+                                                Moved Out
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                                Active
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Buttons — only for active tenants */}
+                            {!isMovedOut && (
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => handleViewTenant(tenant)}
+                                        className="px-4 py-2 text-black rounded-lg transition-all duration-200 text-sm font-medium border bg-yellow-300 hover:bg-yellow-400 border-yellow-300 hover:border-yellow-400"
+                                    >
+                                        View
+                                    </button>
+                                    <button
+                                        onClick={() => handleMoveOut(tenant)}
+                                        className="px-4 py-2 text-yellow-300 bg-black hover:text-yellow-400 rounded-lg transition-all duration-200 text-sm font-medium border border-black hover:border-black"
+                                    >
+                                        Move Out
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Bottom section: Contact & Unit Info */}
+                        <div className="mt-3 flex flex-wrap justify-between w-full gap-4">
+                            {/* Contact Info */}
+                            <div className="flex flex-col items-start gap-2 bg-gray-50 rounded-lg p-4 flex-1 min-w-[300px]">
+                                <div className="flex items-center space-x-2">
+                                    <Mail className="w-4 h-4 text-gray-500" />
+                                    <span className="font-medium text-gray-700">
+                                        Email:
+                                    </span>
+                                    <span className="text-gray-600">
+                                        {tenant.email || ""}
+                                    </span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Phone className="w-4 h-4 text-gray-500" />
+                                    <span className="font-medium text-gray-700">
+                                        Phone:
+                                    </span>
+                                    <span className="text-gray-600">
+                                        {formatPhoneNumber(
+                                            tenant.phoneNumber || ""
+                                        )}
+                                    </span>
+                                </div>
+                                {tenant.messengerLink && (
+                                    <div className="flex items-center space-x-2">
+                                        <LinkIcon className="w-4 h-4 text-yellow-600" />
+                                        <a
+                                            href={tenant.messengerLink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="font-medium text-yellow-600 hover:underline flex items-center space-x-1"
+                                        >
+                                            Messenger / Facebook Link
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Unit Info */}
+                            <div className="flex flex-col md:flex-row items-start gap-4 bg-gray-50 rounded-lg p-4 flex-1 min-w-[300px]">
+                                <div className="flex flex-col justify-center gap-2 flex-1">
+                                    <div className="flex items-center space-x-2">
+                                        <DoorClosed className="w-4 h-4 text-gray-500" />
+                                        <span className="font-medium text-gray-700">
+                                            Unit:
+                                        </span>
+                                        <span className="text-gray-600">
+                                            {tenant.unit.unitNumber}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Building className="w-4 h-4 text-gray-500" />
+                                        <span className="font-medium text-gray-700">
+                                            Building:
+                                        </span>
+                                        <span className="text-gray-600">
+                                            {tenant.unit.name}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Users className="w-4 h-4 text-gray-500" />
+                                        <span className="font-medium text-gray-700">
+                                            No. of Sub-Tenants:
+                                        </span>
+                                        <span className="text-gray-600">
+                                            {tenant.subTenants?.length ?? 0}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col justify-center gap-2 flex-1">
+                                    <div className="flex items-center space-x-2">
+                                        <Calendar className="w-4 h-4 text-gray-500" />
+                                        <span className="font-medium text-gray-700">
+                                            Move-In Date:
+                                        </span>
+                                        <span className="text-gray-600">
+                                            {tenant.moveInDate
+                                                ? new Date(
+                                                      tenant.moveInDate
+                                                  ).toLocaleDateString()
+                                                : "-"}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Calendar className="w-4 h-4 text-gray-500" />
+                                        <span className="font-medium text-gray-700">
+                                            Move-Out Date:
+                                        </span>
+                                        <span className="text-gray-600">
+                                            {tenant.moveOutDate
+                                                ? new Date(
+                                                      tenant.moveOutDate
+                                                  ).toLocaleDateString()
+                                                : "-"}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -387,332 +620,135 @@ export default function TenantsManagementPage() {
             {/* Header */}
             <header className="bg-white shadow-sm border-b">
                 <div className="px-6 py-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-6">
+                        {/* Left: Title */}
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">
                                 Tenant Management
                             </h1>
                             <p className="text-sm text-gray-600 mt-1">
                                 Manage your property tenants ({tenants.length}{" "}
-                                total)
+                                total - {activeTenants.length} active,{" "}
+                                {movedOutTenants.length} moved out)
                             </p>
                         </div>
-                        <input
-                            type="text"
-                            placeholder="Search tenant name..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 w-150"
-                        />
 
-                        <button
-                            onClick={handleAddTenantClick}
-                            className="px-4 py-2 text-yellow-300 bg-black hover:text-yellow-400 rounded-lg transition-all duration-200 text-sm font-medium border border-black hover:border-black"
-                        >
-                            Add Tenant
-                        </button>
+                        {/* Right Section */}
+                        <div className="flex items-center gap-3">
+                            {/* Filter — Segmented Control */}
+                            <div className="flex items-center bg-gray-100 rounded-lg border border-gray-300 overflow-hidden">
+                                <button
+                                    className={`
+                            px-4 py-2 text-sm font-medium transition
+                            ${
+                                tenantFilter === "active"
+                                    ? "bg-yellow-400 text-black"
+                                    : "text-gray-700 hover:bg-gray-200"
+                            }
+                        `}
+                                    onClick={() => setTenantFilter("active")}
+                                >
+                                    Active
+                                </button>
+
+                                <button
+                                    className={`
+                            px-4 py-2 text-sm font-medium transition
+                            ${
+                                tenantFilter === "movedOut"
+                                    ? "bg-yellow-400 text-black"
+                                    : "text-gray-700 hover:bg-gray-200"
+                            }
+                        `}
+                                    onClick={() => setTenantFilter("movedOut")}
+                                >
+                                    Moved Out
+                                </button>
+                            </div>
+
+                            {/* Search */}
+                            <input
+                                type="text"
+                                placeholder="Search tenant name..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 w-80"
+                            />
+
+                            {/* Add Tenant Button */}
+                            <button
+                                onClick={handleAddTenantClick}
+                                className="px-4 py-2 text-yellow-300 bg-black hover:text-yellow-400 rounded-lg transition-all duration-200 text-sm font-medium border border-black"
+                            >
+                                Add Tenant
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
 
-            <div className="flex justify-center mt-6">
-                <div className="flex w-100 gap-5 p-3 pl-8 pr-8 rounded-lg bg-white border border-gray-300 p-1">
-                    <button
-                        className={`
-                            flex-1 px-4 py-2 rounded-lg text-sm font-medium transition
-                            ${
-                                tenantFilter === "active"
-                                    ? "bg-yellow-400 text-black"
-                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                            }
-                        `}
-                        onClick={() => setTenantFilter("active")}
-                    >
-                        Active
-                    </button>
-
-                    <button
-                        className={`
-                            flex-1 px-4 py-2 rounded-lg text-sm font-medium transition
-                            ${
-                                tenantFilter === "movedOut"
-                                    ? "bg-yellow-400 text-black"
-                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                            }
-                        `}
-                        onClick={() => setTenantFilter("movedOut")}
-                    >
-                        Moved Out
-                    </button>
-                </div>
-            </div>
-
             <div className="px-6 py-6">
                 <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-                    {tenants.length === 0 ? (
+                    {tenantFilter === "active" ? (
+                        activeTenants.length === 0 ? (
+                            /* Empty State — Active */
+                            <div className="p-16 text-center bg-gradient-to-b from-gray-50 to-white">
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                    No active tenants
+                                </h3>
+                                <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                                    Get started by adding your first tenant to
+                                    begin managing your property.
+                                </p>
+                                <button
+                                    onClick={handleAddTenantClick}
+                                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                                >
+                                    Add Your First Tenant
+                                </button>
+                            </div>
+                        ) : (
+                            /* Tenant List — Active */
+                            <div className="divide-y divide-gray-100">
+                                {activeTenants
+                                    .filter((tenant) =>
+                                        `${tenant.firstName} ${
+                                            tenant.middleInitial || ""
+                                        } ${tenant.lastName}`
+                                            .toLowerCase()
+                                            .includes(searchQuery.toLowerCase())
+                                    )
+                                    .map(renderTenantCard)}
+                            </div>
+                        )
+                    ) : movedOutTenants.length === 0 ? (
+                        /* Empty State — Moved Out */
                         <div className="p-16 text-center bg-gradient-to-b from-gray-50 to-white">
                             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                                No tenants yet
+                                No moved out tenants
                             </h3>
                             <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                                Get started by adding your first tenant to begin
-                                managing your property
+                                Tenants who previously stayed here will appear
+                                once someone moves out.
                             </p>
-                            <button
-                                onClick={handleAddTenantClick}
-                                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                            >
-                                Add Your First Tenant
-                            </button>
                         </div>
                     ) : (
+                        /* Tenant List — Moved Out */
                         <div className="divide-y divide-gray-100">
-                            {tenants
-                                .filter((tenant) =>
-                                    tenantFilter === "active"
-                                        ? !tenant.moveOutDate
-                                        : tenant.moveOutDate
+                            {movedOutTenants
+                                .sort(
+                                    (a, b) =>
+                                        new Date(b.moveOutDate!).getTime() -
+                                        new Date(a.moveOutDate!).getTime()
                                 )
-                                .sort((a, b) => {
-                                    if (tenantFilter === "movedOut") {
-                                        return new Date(b.moveOutDate!).getTime() - new Date(a.moveOutDate!).getTime();
-                                    }
-                                    return 0;
-                                })
                                 .filter((tenant) =>
-                                    `${tenant.firstName} ${tenant.middleInitial || ""} ${tenant.lastName}`
+                                    `${tenant.firstName} ${
+                                        tenant.middleInitial || ""
+                                    } ${tenant.lastName}`
                                         .toLowerCase()
                                         .includes(searchQuery.toLowerCase())
                                 )
-                                .map((tenant) => (
-                                    <div
-                                        key={tenant.id}
-                                        className={`p-6 transition-all duration-200 group 
-                                        ${
-                                            tenant.moveOutDate
-                                                ? "bg-gray-100"
-                                                : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50"
-                                        }
-                                        `}
-                                    >
-                                        <div className="flex flex-col space-y-4">
-                                            <div className="flex-1">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center space-x-4">
-                                                        <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center shadow-md">
-                                                            <span className="text-yellow-300 font-semibold text-lg">
-                                                                {tenant.firstName?.charAt(
-                                                                    0
-                                                                )}
-                                                                {tenant.lastName?.charAt(
-                                                                    0
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                        <div>
-                                                            <h3
-                                                                className={`font-semibold text-lg transition-colors 
-                                                                ${
-                                                                    tenant.moveOutDate
-                                                                        ? "text-gray-900"
-                                                                        : "text-gray-900 group-hover:text-blue-900"
-                                                                }
-                                                            `}
-                                                            >
-                                                                {formatName(
-                                                                    tenant.firstName ||
-                                                                        "",
-                                                                    tenant.lastName ||
-                                                                        "",
-                                                                    tenant.middleInitial ||
-                                                                        ""
-                                                                )}
-                                                            </h3>
-                                                            <div className="flex items-center space-x-2 mt-1">
-                                                                {tenant.moveOutDate ? (
-                                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-200 text-red-700">
-                                                                        Moved
-                                                                        Out
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                                                                        Active
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* 🔘 Buttons */}
-                                                    <div className="flex space-x-2">
-                                                        {!tenant.moveOutDate && (
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleViewTenant(
-                                                                        tenant
-                                                                    )
-                                                                }
-                                                                className={`px-4 py-2 text-black rounded-lg transition-all duration-200 text-sm font-medium border 
-                                                                ${
-                                                                    tenant.moveOutDate
-                                                                        ? "bg-gray-300 border-gray-300 cursor-not-allowed"
-                                                                        : "bg-yellow-300 hover:bg-yellow-400 border-yellow-300 hover:border-yellow-400"
-                                                                }
-                                                            `}
-                                                            >
-                                                                View
-                                                            </button>
-                                                        )}
-
-                                                        {!tenant.moveOutDate && (
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleMoveOut(
-                                                                        tenant
-                                                                    )
-                                                                }
-                                                                className="px-4 py-2 text-yellow-300 bg-black hover:text-yellow-400 rounded-lg transition-all duration-200 text-sm font-medium border border-black hover:border-black"
-                                                            >
-                                                                Move Out
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                <div className="mt-3 flex flex-wrap justify-between w-full gap-4">
-                                                    {/* Left: Contact Info */}
-                                                    <div className="flex flex-col items-start gap-2 bg-gray-50 rounded-lg p-4 flex-1 min-w-[300px]">
-                                                        <div className="flex items-center space-x-2">
-                                                            <Mail className="w-4 h-4 text-gray-500" />
-                                                            <span className="font-medium text-gray-700">
-                                                                Email:
-                                                            </span>
-                                                            <span className="text-gray-600">
-                                                                {tenant.email ||
-                                                                    ""}
-                                                            </span>
-                                                        </div>
-
-                                                        <div className="flex items-center space-x-2">
-                                                            <Phone className="w-4 h-4 text-gray-500" />
-                                                            <span className="font-medium text-gray-700">
-                                                                Phone:
-                                                            </span>
-                                                            <span className="text-gray-600">
-                                                                {formatPhoneNumber(
-                                                                    tenant.phoneNumber ||
-                                                                        ""
-                                                                )}
-                                                            </span>
-                                                        </div>
-
-                                                        {tenant.messengerLink && (
-                                                            <div className="flex items-center space-x-2">
-                                                                <LinkIcon className="w-4 h-4 text-yellow-600" />
-                                                                <a
-                                                                    href={
-                                                                        tenant.messengerLink
-                                                                    }
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="font-medium text-yellow-600 hover:underline flex items-center space-x-1"
-                                                                >
-                                                                    <span>
-                                                                        Messenger
-                                                                        /
-                                                                        Facebook
-                                                                        Link
-                                                                    </span>
-                                                                </a>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Right: Unit Info */}
-                                                    <div className="flex flex-col md:flex-row items-start gap-4 bg-gray-50 rounded-lg p-4 flex-1 min-w-[300px]">
-                                                        {/* Left Column: Unit Details */}
-                                                        <div className="flex flex-col justify-center gap-2 flex-1">
-                                                            <div className="flex items-center space-x-2">
-                                                                <DoorClosed className="w-4 h-4 text-gray-500" />
-                                                                <span className="font-medium text-gray-700">
-                                                                    Unit:
-                                                                </span>
-                                                                <span className="text-gray-600">
-                                                                    {
-                                                                        tenant
-                                                                            .unit
-                                                                            .unitNumber
-                                                                    }
-                                                                </span>
-                                                            </div>
-
-                                                            <div className="flex items-center space-x-2">
-                                                                <Building className="w-4 h-4 text-gray-500" />
-                                                                <span className="font-medium text-gray-700">
-                                                                    Building:
-                                                                </span>
-                                                                <span className="text-gray-600">
-                                                                    {
-                                                                        tenant
-                                                                            .unit
-                                                                            .name
-                                                                    }
-                                                                </span>
-                                                            </div>
-
-                                                            <div className="flex items-center space-x-2">
-                                                                <Users className="w-4 h-4 text-gray-500" />
-                                                                <span className="font-medium text-gray-700">
-                                                                    No. of
-                                                                    Sub-Tenants:
-                                                                </span>
-                                                                <span className="text-gray-600">
-                                                                    {tenant
-                                                                        .subTenants
-                                                                        ?.length ??
-                                                                        0}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Right Column: Dates */}
-                                                        <div className="flex flex-col justify-center gap-2 flex-1">
-                                                            <div className="flex items-center space-x-2">
-                                                                <Calendar className="w-4 h-4 text-gray-500" />
-                                                                <span className="font-medium text-gray-700">
-                                                                    Move-In
-                                                                    Date:
-                                                                </span>
-                                                                <span className="text-gray-600">
-                                                                    {tenant.moveInDate
-                                                                        ? new Date(
-                                                                              tenant.moveInDate
-                                                                          ).toLocaleDateString()
-                                                                        : "-"}
-                                                                </span>
-                                                            </div>
-
-                                                            <div className="flex items-center space-x-2">
-                                                                <Calendar className="w-4 h-4 text-gray-500" />
-                                                                <span className="font-medium text-gray-700">
-                                                                    Move-Out
-                                                                    Date:
-                                                                </span>
-                                                                <span className="text-gray-600">
-                                                                    {tenant.moveOutDate
-                                                                        ? new Date(
-                                                                              tenant.moveOutDate
-                                                                          ).toLocaleDateString()
-                                                                        : "-"}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                .map(renderTenantCard)}
                         </div>
                     )}
                 </div>
