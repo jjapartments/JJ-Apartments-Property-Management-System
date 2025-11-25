@@ -61,8 +61,6 @@ export function TicketDetail({
     const [currTicket, setCurrTicket] = useState(ticket);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-    if (!ticket) return null;
-
     const reqNum = `REQ-${ticket.id.toString().padStart(6, "0")}`;
 
     useEffect(() => {
@@ -128,6 +126,8 @@ export function TicketDetail({
             }
         }
     };
+
+    if (!ticket) return null;
 
     return (
         <>

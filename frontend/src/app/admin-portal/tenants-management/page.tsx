@@ -355,7 +355,7 @@ export default function TenantsManagementPage() {
 
             if (updated) setSelectedTenant(updated);
         }
-    }, [units, fullTenantData]);
+    }, [units, fullTenantData, selectedTenant]);
 
     const fetchUnitsAndTenants = async () => {
         try {
