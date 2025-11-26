@@ -54,10 +54,14 @@ export default function RequestsPage() {
                 setRecaptchaReady(true);
                 clearInterval(interval);
 
-                if (recaptchaRef.current) {
-                    window.grecaptcha.render(recaptchaRef.current, {
-                        sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!,
-                    });
+                if (recaptchaRef.current && !recaptchaRef.current.children.length) {
+                    try {
+                        window.grecaptcha.render(recaptchaRef.current, {
+                            sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!,
+                        });
+                    } catch (err) {
+                        console.warn("Failed to render grecaptcha:", err);
+                    }
                 }
             }
         }, 100);
@@ -75,6 +79,7 @@ export default function RequestsPage() {
         if (!formData.apartment.trim()) newErrors.apartment = "Required";
         if (!formData.name.trim()) newErrors.name = "Required";
         if (!formData.phone.trim()) newErrors.phone = "Required";
+        else if (!/^\d+$/.test(formData.phone.trim())) newErrors.phone = "Invalid phone number format";
         if (!formData.category.trim()) newErrors.category = "Required";
         if (!formData.subject.trim()) newErrors.subject = "Required";
         if (!formData.description.trim()) newErrors.description = "Required";
@@ -170,7 +175,13 @@ export default function RequestsPage() {
                 description: "",
             });
 
-            window.grecaptcha.reset();
+            try {
+                window.grecaptcha.reset();
+            } catch (err) {
+                // In test environment or if grecaptcha hasn't been properly initialized,
+                // the reset might fail. This is safe to ignore.
+                console.warn("Failed to reset grecaptcha:", err);
+            }
         } catch (error) {
             console.error("Error submitting ticket:", error);
             alert("An error occurred. Please try again.");
@@ -203,6 +214,7 @@ export default function RequestsPage() {
                         onChange={(v) => handleChange("unit", v)}
                         required
                         error={errors.unit}
+                        dataCy="unit-input"
                     />
                     <FormInput
                         label="Apartment Name"
@@ -211,6 +223,7 @@ export default function RequestsPage() {
                         onChange={(v) => handleChange("apartment", v)}
                         required
                         error={errors.apartment}
+                        dataCy="apartment-input"
                     />
                     <FormInput
                         label="Name"
@@ -219,6 +232,7 @@ export default function RequestsPage() {
                         onChange={(v) => handleChange("name", v)}
                         required
                         error={errors.name}
+                        dataCy="name-input"
                     />
                     <FormInput
                         label="Phone Number"
@@ -227,6 +241,7 @@ export default function RequestsPage() {
                         onChange={(v) => handleChange("phone", v)}
                         required
                         error={errors.phone}
+                        dataCy="phone-input"
                     />
                     <FormInput
                         label="Email"
@@ -256,7 +271,7 @@ export default function RequestsPage() {
                                     handleChange("category", value)
                                 }
                             >
-                                <SelectTrigger className="w-full md:w-3/4 min-h-6 rounded-md border border-gray-300 px-2 py-1 text-left text-sm">
+                                <SelectTrigger data-cy="category-select" className="w-full md:w-3/4 min-h-6 rounded-md border border-gray-300 px-2 py-1 text-left text-sm">
                                     <SelectValue placeholder="Select Category" />
                                 </SelectTrigger>
                                 <SelectContent className="w-full md:w-3/4">
@@ -268,7 +283,7 @@ export default function RequestsPage() {
                                         "Amenities & Facilities",
                                         "Others",
                                     ].map((category, index) => (
-                                        <SelectItem key={index} value={category}>
+                                        <SelectItem data-cy={`category-option-${index}`} key={index} value={category}>
                                             {category}
                                         </SelectItem>
                                     ))}
@@ -284,6 +299,7 @@ export default function RequestsPage() {
                         onChange={(v) => handleChange("subject", v)}
                         required
                         error={errors.subject}
+                        dataCy="subject-input"
                     />
                     <FormInput
                         label="Description"
@@ -293,6 +309,7 @@ export default function RequestsPage() {
                         onChange={(v) => handleChange("description", v)}
                         required
                         error={errors.description}
+                        dataCy="description-input"
                     />
 
                     <hr className="border-gray-300 mb-6 mt-6" />
@@ -301,12 +318,14 @@ export default function RequestsPage() {
                     <div className="w-full flex flex-col md:flex-row justify-between items-center px-2 gap-4 md:gap-0 mt-4">
                         <div
                             ref={recaptchaRef}
+                            data-cy="recaptcha"
                             className="g-recaptcha w-full md:w-1/2 transform scale-85 origin-top-left items-center"
                         ></div>
 
                         <div className="w-full md:w-1/2 flex justify-start md:justify-end items-center">
                             <button
                                 type="submit"
+                                data-cy="submit-button"
                                 className="w-full md:w-auto bg-yellow-400 hover:bg-yellow-500 text-black font-medium text-sm px-4 py-2 rounded-lg shadow"
                             >
                                 SUBMIT
@@ -338,6 +357,7 @@ const FormInput = ({
     placeholder,
     required = false,
     error,
+    dataCy,
 }: {
     label: string;
     value: string;
@@ -346,6 +366,7 @@ const FormInput = ({
     placeholder?: string;
     required?: boolean;
     error?: string;
+    dataCy?: string;
 }) => {
     return (
         <div className="w-full mb-3 px-2">
@@ -359,6 +380,7 @@ const FormInput = ({
                         required={required}
                         rows={4}
                         value={value}
+                        data-cy={dataCy}
                         onChange={(e) => onChange(e.target.value)}
                         className="w-full md:w-3/4 rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y"
                     />
@@ -368,6 +390,7 @@ const FormInput = ({
                         placeholder={placeholder}
                         required={required}
                         value={value}
+                        data-cy={dataCy}
                         onChange={(e) => onChange(e.target.value)}
                         className="w-full md:w-3/4 rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
