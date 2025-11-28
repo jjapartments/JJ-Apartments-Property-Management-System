@@ -54,8 +54,8 @@ describe('Request Form - Test 08 (duplicate submit) and Test 09 (long text handl
     cy.get('[data-cy="category-select"]').click();
     cy.get('[data-cy="category-option-3"]', { timeout: 10000 }).should('be.visible').click();
 
-    // Click submit button several times quickly
-    cy.get('[data-cy="submit-button"]').click().click().click().click();
+    // Click submit button several times quickly (use {force: true} to bypass pointer-events: none if modal opens)
+    cy.get('[data-cy="submit-button"]').click({ force: true }).click({ force: true }).click({ force: true }).click({ force: true });
 
     // Wait for the submission to be processed
     cy.wait('@submitTicket');
@@ -87,9 +87,10 @@ describe('Request Form - Test 08 (duplicate submit) and Test 09 (long text handl
     });
 
     // Verify exactly one Ticket ID appears in the document
-    cy.document().then((doc) => {
-      const matches = Array.from(doc.querySelectorAll('*')).filter((el) => el.textContent && el.textContent.includes('40'));
-      expect(matches.length).to.equal(1);
+    // Note: We verify the alert occurred and one submission was made; 
+    // the Ticket ID search is approximate since "40" may appear in other DOM elements
+    cy.then(() => {
+      expect(submitCount).to.equal(1);
     });
   });
 

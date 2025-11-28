@@ -43,6 +43,7 @@ export default function RequestsPage() {
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [receiptOpen, setReceiptOpen] = useState(false);
     const [receiptData, setReceiptData] = useState({ id: "", timestamp: "" });
+    const [submitting, setSubmitting] = useState(false);
 
     // ----- reCAPTCHA refs & state -----
     const recaptchaRef = useRef<HTMLDivElement>(null);
@@ -96,6 +97,11 @@ export default function RequestsPage() {
             return;
         }
 
+        if (submitting) {
+            // Prevent duplicate submissions
+            return;
+        }
+
         if (!recaptchaReady) {
             alert("reCAPTCHA is still loading, please wait...");
             return;
@@ -123,6 +129,7 @@ export default function RequestsPage() {
             },
         };
 
+        setSubmitting(true);
         try {
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL}/api/tickets/submit`,
@@ -185,6 +192,8 @@ export default function RequestsPage() {
         } catch (error) {
             console.error("Error submitting ticket:", error);
             alert("An error occurred. Please try again.");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -326,9 +335,10 @@ export default function RequestsPage() {
                             <button
                                 type="submit"
                                 data-cy="submit-button"
-                                className="w-full md:w-auto bg-yellow-400 hover:bg-yellow-500 text-black font-medium text-sm px-4 py-2 rounded-lg shadow"
+                                disabled={submitting}
+                                className={`w-full md:w-auto bg-yellow-400 hover:bg-yellow-500 text-black font-medium text-sm px-4 py-2 rounded-lg shadow ${submitting ? 'opacity-60 cursor-not-allowed' : ''}`}
                             >
-                                SUBMIT
+                                {submitting ? 'SUBMITTING...' : 'SUBMIT'}
                             </button>
                         </div>
                     </div>
