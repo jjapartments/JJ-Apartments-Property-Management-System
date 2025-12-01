@@ -4,9 +4,10 @@ import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: string | null;
-  login: (username: string) => void;
+  login: (username: string, token: string) => void;
   logout: () => void;
   isLoading: boolean;
+  getToken: () => string | null;
 }
 
 export const useAuth = (): AuthContextType => {
@@ -17,25 +18,36 @@ export const useAuth = (): AuthContextType => {
   useEffect(() => {
     // Check if user is logged in on component mount
     const storedUser = localStorage.getItem('username');
-    if (storedUser) {
+    const token = localStorage.getItem('token');
+    
+    // Only set user if both username and token exist
+    if (storedUser && token) {
       setUser(storedUser);
     }
     setIsLoading(false);
   }, []);
 
-  const login = (username: string) => {
+  const login = (username: string, token: string) => {
     localStorage.setItem('username', username);
+    localStorage.setItem('token', token);
+    localStorage.setItem('isLoggedIn', 'true');
     setUser(username);
-    router.push('/');
+    router.push('/admin-portal/dashboard');
   };
 
   const logout = () => {
     localStorage.removeItem('username');
+    localStorage.removeItem('token');
+    localStorage.removeItem('isLoggedIn');
     setUser(null);
-    router.push('/login');
+    router.push('/admin-portal/login');
   };
 
-  return { user, login, logout, isLoading };
+  const getToken = (): string | null => {
+    return localStorage.getItem('token');
+  };
+
+  return { user, login, logout, isLoading, getToken };
 };
 
 interface ProtectedRouteProps {
@@ -48,7 +60,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/login');
+      router.push('/admin-portal/login');
     }
   }, [user, isLoading, router]);
 

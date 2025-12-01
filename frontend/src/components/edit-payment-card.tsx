@@ -15,6 +15,7 @@ import { Select, SelectTrigger, SelectItem, SelectContent, SelectValue } from "@
 import { Payment } from './payments-list'
 import { Unit } from './expenses-list'
 import { DatePicker } from './date-picker'
+import { api, ApiError } from '@/lib/api'
 type Props = {
   open: boolean
   onClose: () => void
@@ -54,19 +55,23 @@ export default function EditPaymentCard({ open, onClose, onSave, payment }: Prop
     useEffect(() => {
         const fetchUnits = async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/units`);
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err?.error || "Failed to fetch units data.");
-                }
-                const data = await res.json();
-                setUnits(data);
-            } catch (error: any) {
-                setError(error.message || "Failed to fetch data")
+            const data = await api.get<Unit[]>("/api/units");
+            setUnits(data);
+            } catch (error: unknown) {
+            const displayMessage =
+                error instanceof ApiError
+                ? error.message
+                : error instanceof Error
+                ? error.message
+                : "Failed to fetch units data.";
+            console.error("fetchUnits error:", error);
+            setError(displayMessage);
             }
         };
+
         fetchUnits();
     }, []);
+
 
 
     const handleCancel = () => {

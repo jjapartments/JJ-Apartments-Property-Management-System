@@ -20,9 +20,9 @@ CREATE TABLE IF NOT EXISTS users (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `units` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `unit_number` VARCHAR(1) NOT NULL,
-  `name` VARCHAR(45) NOT NULL,
-  `description` VARCHAR(45) NOT NULL,
+  `unit_number` VARCHAR(20) NOT NULL,
+  `name` VARCHAR(100) NOT NULL,
+  `description` VARCHAR(150) NOT NULL,
   `price` DECIMAL(10, 2) NOT NULL,
   `num_occupants` INT NOT NULL,
   `active_tenant_id` INT NULL,
@@ -67,8 +67,6 @@ CREATE TABLE IF NOT EXISTS `tenants` (
   `move_in_date` DATE NULL,
   `move_out_date` DATE NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE,
-  UNIQUE INDEX `phone_number_UNIQUE` (`phone_number` ASC) VISIBLE,
   INDEX `fk_tenants_units1_idx` (`units_id` ASC) VISIBLE,
   CONSTRAINT `fk_tenants_units1`
     FOREIGN KEY (`units_id`)
@@ -77,18 +75,18 @@ CREATE TABLE IF NOT EXISTS `tenants` (
 ) ENGINE = InnoDB;
 
 INSERT INTO `tenants` 
-(`last_name`, `first_name`, `middle_initial`, `email`, `phone_number`, `messenger_link`, `units_id`) 
+(`last_name`, `first_name`, `middle_initial`, `email`, `phone_number`, `messenger_link`, `units_id`, `move_in_date`, `move_out_date`) 
 VALUES
-('Dela Cruz', 'Juan', 'R', 'juan.delacruz@example.com', '09171234567', 'https://m.me/juan.delacruz', 1),
-('Santos', 'Maria', 'L', 'maria.santos@example.com', '09181234567', 'https://facebook.com/maria.santos', 3),
-('Reyes', 'Carlos', 'T', 'carlos.reyes@example.com', '09192234567', 'https://m.me/carlos.reyes', 5),
-('Cruz', 'Angela', 'M', 'angela.cruz@example.com', '09201234567', 'https://facebook.com/angela.cruz', 7),
-('Gomez', 'Joseph', 'P', 'joseph.gomez@example.com', '09211234567', 'https://m.me/joseph.gomez', 9),
-('Torres', 'Anna', 'S', 'anna.torres@example.com', '09221234567', 'https://facebook.com/anna.torres', 11),
-('Lopez', 'Daniel', 'V', 'daniel.lopez@example.com', '09231234567', 'https://m.me/daniel.lopez', 13),
-('Garcia', 'Leah', 'C', 'leah.garcia@example.com', '09241234567', 'https://facebook.com/leah.garcia', 15),
-('Navarro', 'Miguel', 'D', 'miguel.navarro@example.com', '09251234567', 'https://m.me/miguel.navarro', 17),
-('Ramos', 'Patricia', 'E', 'patricia.ramos@example.com', '09261234567', 'https://facebook.com/patricia.ramos', 19);
+('Dela Cruz', 'Juan', 'R', 'juan.delacruz@example.com', '09171234567', 'https://m.me/juan.delacruz', 1, '2024-02-15', NULL),
+('Santos', 'Maria', 'L', 'maria.santos@example.com', '09181234567', 'https://facebook.com/maria.santos', 3, '2023-11-01', NULL),
+('Reyes', 'Carlos', 'T', 'carlos.reyes@example.com', '09192234567', 'https://m.me/carlos.reyes', 5, '2024-06-10', NULL),
+('Cruz', 'Angela', 'M', 'angela.cruz@example.com', '09201234567', 'https://facebook.com/angela.cruz', 7, '2025-01-05', NULL),
+('Gomez', 'Joseph', 'P', 'joseph.gomez@example.com', '09211234567', 'https://m.me/joseph.gomez', 9, '2024-03-20', NULL),
+('Torres', 'Anna', 'S', 'anna.torres@example.com', '09221234567', 'https://facebook.com/anna.torres', 11, '2023-09-12', NULL),
+('Lopez', 'Daniel', 'V', 'daniel.lopez@example.com', '09231234567', 'https://m.me/daniel.lopez', 13, '2024-10-01', NULL),
+('Garcia', 'Leah', 'C', 'leah.garcia@example.com', '09241234567', 'https://facebook.com/leah.garcia', 15, '2024-05-18', NULL),
+('Navarro', 'Miguel', 'D', 'miguel.navarro@example.com', '09251234567', 'https://m.me/miguel.navarro', 17, '2023-12-07', NULL),
+('Ramos', 'Patricia', 'E', 'patricia.ramos@example.com', '09261234567', 'https://facebook.com/patricia.ramos', 19, '2024-08-25', NULL);
 
 -- Foreign key constraint to units table
 ALTER TABLE `units`
@@ -263,6 +261,39 @@ CREATE TABLE IF NOT EXISTS monthly_reports (
   UNIQUE KEY unique_unit_year_month (units_id, year, month),
   INDEX fk_monthlyreports_units1_idx (units_id ASC),
   CONSTRAINT fk_monthlyreports_units1 FOREIGN KEY (units_id) REFERENCES units (id) ON DELETE SET NULL
+) ENGINE = InnoDB;
+
+-- -----------------------------------------------------
+-- Table: tickets
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS tickets (
+    id INT NOT NULL AUTO_INCREMENT,
+    unit_number VARCHAR(20) NOT NULL,
+    apartment_name VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    phone_number VARCHAR(15) NOT NULL,
+    email VARCHAR(255) NULL,
+    messenger_link VARCHAR(512) NULL,
+    category ENUM(
+        'Maintenance & Repairs',
+        'Security & Safety',
+        'Utilities',
+        'Payment & Billing',
+        'Amenities & Facilities',
+        'Others'
+    ) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    status ENUM(
+        'Pending',
+        'In Progress',
+        'Resolved',
+        'Closed'
+    ) NOT NULL DEFAULT 'Pending',
+    submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status_updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    status_updated_by VARCHAR(45) NOT NULL,
+    PRIMARY KEY (id)
 ) ENGINE = InnoDB;
 
 INSERT INTO monthly_reports(year, month, units_id, monthly_dues, utility_bills, expenses)
