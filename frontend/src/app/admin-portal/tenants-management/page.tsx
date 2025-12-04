@@ -627,70 +627,83 @@ export default function TenantsManagementPage() {
             {/* Header */}
             <header className="bg-white shadow-sm border-b">
                 <div className="px-6 py-4">
-                    <div className="flex items-center justify-between gap-6">
-                        {/* Left: Title */}
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">
-                                Tenant Management
-                            </h1>
-                            <p className="text-sm text-gray-600 mt-1">
-                                Manage your property tenants ({tenants.length}{" "}
-                                total - {activeTenants.length} active,{" "}
-                                {movedOutTenants.length} moved out)
-                            </p>
+                    {isLoading ? (
+                        /* Loading Header State */
+                        <div className="flex items-center justify-between gap-6">
+                            <div>
+                                <h1 className="text-2xl font-bold text-gray-900">
+                                    Tenant Management
+                                </h1>
+                                <div className="h-5 bg-gray-200 rounded w-64 mt-1 animate-pulse"></div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 bg-gray-200 rounded-lg w-32 animate-pulse"></div>
+                                <div className="h-10 bg-gray-200 rounded-lg w-80 animate-pulse"></div>
+                                <div className="h-10 bg-gray-200 rounded-lg w-32 animate-pulse"></div>
+                            </div>
                         </div>
-
-                        {/* Right Section */}
-                        <div className="flex items-center gap-3">
-                            {/* Filter — Segmented Control */}
-                            <div className="flex items-center bg-gray-100 rounded-lg border border-gray-300 overflow-hidden">
+                    ) : (
+                        <div className="flex items-center justify-between gap-6">
+                            {/* Left: Title */}
+                            <div>
+                                <h1 className="text-2xl font-bold text-gray-900">
+                                    Tenant Management
+                                </h1>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    Manage your property tenants ({tenants.length}{" "}
+                                    total - {activeTenants.length} active,{" "}
+                                    {movedOutTenants.length} moved out)
+                                </p>
+                            </div>
+                            {/* Right Section */}
+                            <div className="flex items-center gap-3">
+                                {/* Filter — Segmented Control */}
+                                <div className="flex items-center bg-gray-100 rounded-lg border border-gray-300 overflow-hidden">
+                                    <button
+                                        className={`
+                                px-4 py-2 text-sm font-medium transition
+                                ${
+                                    tenantFilter === "active"
+                                        ? "bg-yellow-400 text-black"
+                                        : "text-gray-700 hover:bg-gray-200"
+                                }
+                            `}
+                                        onClick={() => setTenantFilter("active")}
+                                    >
+                                        Active
+                                    </button>
+                                    <button
+                                        className={`
+                                px-4 py-2 text-sm font-medium transition
+                                ${
+                                    tenantFilter === "movedOut"
+                                        ? "bg-yellow-400 text-black"
+                                        : "text-gray-700 hover:bg-gray-200"
+                                }
+                            `}
+                                        onClick={() => setTenantFilter("movedOut")}
+                                    >
+                                        Moved Out
+                                    </button>
+                                </div>
+                                {/* Search */}
+                                <input
+                                    type="text"
+                                    placeholder="Search tenant name..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 w-80"
+                                />
+                                {/* Add Tenant Button */}
                                 <button
-                                    className={`
-                            px-4 py-2 text-sm font-medium transition
-                            ${
-                                tenantFilter === "active"
-                                    ? "bg-yellow-400 text-black"
-                                    : "text-gray-700 hover:bg-gray-200"
-                            }
-                        `}
-                                    onClick={() => setTenantFilter("active")}
+                                    onClick={handleAddTenantClick}
+                                    className="px-4 py-2 text-yellow-300 bg-black hover:text-yellow-400 rounded-lg transition-all duration-200 text-sm font-medium border border-black"
                                 >
-                                    Active
-                                </button>
-
-                                <button
-                                    className={`
-                            px-4 py-2 text-sm font-medium transition
-                            ${
-                                tenantFilter === "movedOut"
-                                    ? "bg-yellow-400 text-black"
-                                    : "text-gray-700 hover:bg-gray-200"
-                            }
-                        `}
-                                    onClick={() => setTenantFilter("movedOut")}
-                                >
-                                    Moved Out
+                                    Add Tenant
                                 </button>
                             </div>
-
-                            {/* Search */}
-                            <input
-                                type="text"
-                                placeholder="Search tenant name..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 w-80"
-                            />
-
-                            {/* Add Tenant Button */}
-                            <button
-                                onClick={handleAddTenantClick}
-                                className="px-4 py-2 text-yellow-300 bg-black hover:text-yellow-400 rounded-lg transition-all duration-200 text-sm font-medium border border-black"
-                            >
-                                Add Tenant
-                            </button>
                         </div>
-                    </div>
+                    )}
                 </div>
             </header>
 
