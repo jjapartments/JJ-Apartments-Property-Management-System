@@ -7,6 +7,8 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -24,29 +26,50 @@ import com.jjapartments.backend.models.Ticket;
 @Repository
 public class TicketRepository {
 
+    private static final Logger logger = LoggerFactory.getLogger(TicketRepository.class);
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
     private boolean duplicateExists(Ticket ticket) {
+        logger.debug("Checking for duplicate ticket - phone: {}, subject: {}",
+                ticket.getPhoneNumber(), ticket.getSubject());
         String sql = """
                 SELECT COUNT(*) FROM tickets
                 WHERE phone_number = ? AND subject = ? AND status = ?
                 """;
-        Integer count = jdbcTemplate.queryForObject(
-                sql,
-                Integer.class,
-                ticket.getPhoneNumber(),
-                ticket.getSubject(),
-                Status.PENDING.getLabel());
-        return count != null && count > 0;
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    sql,
+                    Integer.class,
+                    ticket.getPhoneNumber(),
+                    ticket.getSubject(),
+                    Status.PENDING.getLabel());
+            boolean exists = count != null && count > 0;
+            logger.debug("Duplicate check result: {}", exists);
+            return exists;
+        } catch (DataAccessException e) {
+            logger.error("Error checking for duplicate ticket", e);
+            throw new ErrorException("Database error while checking for duplicate ticket: " + e.getMessage());
+        }
     }
 
     @Transactional
     public int add(Ticket ticket) {
+        logger.info("=== ADD TICKET START ===");
+        logger.info("Ticket details - Unit: {}, Apartment: {}, Name: {}, Phone: {}, Category: {}, Subject: {}",
+                ticket.getUnitNumber(), ticket.getApartmentName(), ticket.getName(),
+                ticket.getPhoneNumber(), ticket.getCategory(), ticket.getSubject());
+
         if (ticket == null) {
+            logger.error("Ticket payload is null");
             throw new ErrorException("Ticket payload is required.");
         }
+
+        logger.debug("Checking for duplicate ticket");
         if (duplicateExists(ticket)) {
+            logger.warn("Duplicate ticket detected - phone: {}, subject: {}",
+                    ticket.getPhoneNumber(), ticket.getSubject());
             throw new ErrorException("A pending ticket with the same phone number and subject already exists.");
         }
 
@@ -67,15 +90,25 @@ public class TicketRepository {
                     status_updated_by
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
+
         String categoryLabel = ticket.getCategory() != null ? ticket.getCategory().getLabel() : null;
         String statusLabel = ticket.getStatus() != null ? ticket.getStatus().getLabel() : Status.PENDING.getLabel();
+
+        logger.debug("Converting timestamps - submittedAt: {}, statusUpdatedAt: {}",
+                ticket.getSubmittedAt(), ticket.getStatusUpdatedAt());
+
         Timestamp submittedAt = toTimestamp(ticket.getSubmittedAt(), "submittedAt");
         final Timestamp statusUpdatedAt = toTimestamp(ticket.getStatusUpdatedAt(), "statusUpdatedAt");
         final Timestamp resolvedStatusUpdatedAt = statusUpdatedAt != null ? statusUpdatedAt : submittedAt;
 
+        logger.debug("Timestamps converted - submittedAt: {}, statusUpdatedAt: {}",
+                submittedAt, resolvedStatusUpdatedAt);
+        logger.debug("Category label: {}, Status label: {}", categoryLabel, statusLabel);
+
         KeyHolder keyHolder = new GeneratedKeyHolder();
         try {
-            jdbcTemplate.update(con -> {
+            logger.info("Executing INSERT statement");
+            int rowsAffected = jdbcTemplate.update(con -> {
                 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                 ps.setString(1, ticket.getUnitNumber());
                 ps.setString(2, ticket.getApartmentName());
@@ -90,84 +123,131 @@ public class TicketRepository {
                 ps.setTimestamp(11, submittedAt);
                 ps.setTimestamp(12, resolvedStatusUpdatedAt);
                 ps.setObject(13, null);
+
+                logger.debug("PreparedStatement created with parameters set");
                 return ps;
             }, keyHolder);
+
+            logger.info("INSERT executed successfully - rows affected: {}", rowsAffected);
+
         } catch (DataAccessException e) {
-            throw new ErrorException("Database error while creating ticket.");
+            logger.error("=== DATABASE ERROR DURING INSERT ===");
+            logger.error("Error type: {}", e.getClass().getName());
+            logger.error("Error message: {}", e.getMessage());
+            logger.error("Root cause: {}", e.getRootCause() != null ? e.getRootCause().getMessage() : "none");
+            logger.error("Full stack trace:", e);
+            throw new ErrorException("Database error while creating ticket: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("=== UNEXPECTED ERROR DURING INSERT ===");
+            logger.error("Error type: {}", e.getClass().getName());
+            logger.error("Error message: {}", e.getMessage());
+            logger.error("Full stack trace:", e);
+            throw new ErrorException("Unexpected error while creating ticket: " + e.getMessage());
         }
 
         Number key = keyHolder.getKey();
         if (key == null) {
+            logger.error("Generated key is null after insert");
             throw new ErrorException("Failed to retrieve generated ticket ID.");
         }
-        return key.intValue();
+
+        int generatedId = key.intValue();
+        logger.info("=== ADD TICKET SUCCESS - ID: {} ===", generatedId);
+        return generatedId;
     }
 
     @Transactional
     public int delete(int id) {
+        logger.info("Deleting ticket with id: {}", id);
         try {
-            return jdbcTemplate.update("DELETE FROM tickets WHERE id = ?", id);
+            int rowsAffected = jdbcTemplate.update("DELETE FROM tickets WHERE id = ?", id);
+            logger.info("Delete result - rows affected: {}", rowsAffected);
+            return rowsAffected;
         } catch (DataAccessException e) {
-            throw new ErrorException("Database error while deleting ticket.");
+            logger.error("Error deleting ticket id: {}", id, e);
+            throw new ErrorException("Database error while deleting ticket: " + e.getMessage());
         }
     }
 
     @Transactional(readOnly = true)
     public List<Ticket> findAll() {
+        logger.debug("Fetching all tickets");
         try {
-            return jdbcTemplate.query("SELECT * FROM tickets ORDER BY submitted_at DESC", new TicketRowMapper());
+            List<Ticket> tickets = jdbcTemplate.query("SELECT * FROM tickets ORDER BY submitted_at DESC",
+                    new TicketRowMapper());
+            logger.debug("Fetched {} tickets", tickets.size());
+            return tickets;
         } catch (DataAccessException e) {
-            throw new ErrorException("Database error while fetching tickets.");
+            logger.error("Error fetching all tickets", e);
+            throw new ErrorException("Database error while fetching tickets: " + e.getMessage());
         }
     }
 
     @Transactional(readOnly = true)
     public List<Ticket> findByStatus(Status status) {
+        logger.debug("Fetching tickets by status: {}", status);
         if (status == null) {
             return findAll();
         }
         String sql = "SELECT * FROM tickets WHERE status = ? ORDER BY submitted_at DESC";
         try {
-            return jdbcTemplate.query(sql, new TicketRowMapper(), status.getLabel());
+            List<Ticket> tickets = jdbcTemplate.query(sql, new TicketRowMapper(), status.getLabel());
+            logger.debug("Fetched {} tickets with status: {}", tickets.size(), status);
+            return tickets;
         } catch (DataAccessException e) {
-            throw new ErrorException("Database error while fetching tickets by status.");
+            logger.error("Error fetching tickets by status: {}", status, e);
+            throw new ErrorException("Database error while fetching tickets by status: " + e.getMessage());
         }
     }
 
     @Transactional(readOnly = true)
     public Ticket findById(int id) {
+        logger.debug("Fetching ticket by id: {}", id);
         String sql = "SELECT * FROM tickets WHERE id = ?";
         try {
-            return jdbcTemplate.queryForObject(sql, new TicketRowMapper(), id);
+            Ticket ticket = jdbcTemplate.queryForObject(sql, new TicketRowMapper(), id);
+            logger.debug("Found ticket with id: {}", id);
+            return ticket;
         } catch (EmptyResultDataAccessException e) {
+            logger.debug("No ticket found with id: {}", id);
             return null;
         } catch (DataAccessException e) {
-            throw new ErrorException("Database error while fetching ticket by id.");
+            logger.error("Error fetching ticket by id: {}", id, e);
+            throw new ErrorException("Database error while fetching ticket by id: " + e.getMessage());
         }
     }
 
     @Transactional
     public int updateStatus(int id, Status status, String statusUpdatedAt, String statusUpdatedBy) {
+        logger.info("Updating status for ticket id: {} to status: {}", id, status);
         if (status == null) {
+            logger.error("Status is null");
             throw new ErrorException("Status is required.");
         }
         Timestamp statusUpdatedAtTs = toTimestamp(statusUpdatedAt, "statusUpdatedAt");
         String sql = "UPDATE tickets SET status = ?, status_updated_at = ?, status_updated_by = ? WHERE id = ?";
         try {
-            return jdbcTemplate.update(sql, status.getLabel(), statusUpdatedAtTs, statusUpdatedBy, id);
+            int rowsAffected = jdbcTemplate.update(sql, status.getLabel(), statusUpdatedAtTs, statusUpdatedBy, id);
+            logger.info("Status update result - rows affected: {}", rowsAffected);
+            return rowsAffected;
         } catch (DataAccessException e) {
-            throw new ErrorException("Database error while updating ticket status.");
+            logger.error("Error updating ticket status for id: {}", id, e);
+            throw new ErrorException("Database error while updating ticket status: " + e.getMessage());
         }
     }
 
     private Timestamp toTimestamp(String value, String fieldName) {
         if (value == null || value.trim().isEmpty()) {
+            logger.debug("Timestamp field {} is null or empty", fieldName);
             return null;
         }
         try {
-            return Timestamp.from(Instant.parse(value));
+            Timestamp ts = Timestamp.from(Instant.parse(value));
+            logger.debug("Converted {} to timestamp: {}", fieldName, ts);
+            return ts;
         } catch (DateTimeParseException e) {
-            throw new ErrorException("Invalid timestamp format for " + fieldName + ".");
+            logger.error("Invalid timestamp format for {}: {}", fieldName, value, e);
+            throw new ErrorException("Invalid timestamp format for " + fieldName + ": " + value);
         }
     }
 }
