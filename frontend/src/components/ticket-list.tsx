@@ -30,6 +30,7 @@ type TicketListProps = {
 
 export function TicketList({ searchQuery, statusFilter }: TicketListProps) {
     const [tickets, setTickets] = useState<Ticket[]>([]);
+    const [loading, setLoading] = useState(false);
 
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -40,6 +41,7 @@ export function TicketList({ searchQuery, statusFilter }: TicketListProps) {
     const now = new Date();
     useEffect(() => {
         const fetchTickets = async () => {
+            setLoading(true);
             try {
                 const response = await api.get("/api/tickets");
                 console.log("Fetched tickets; ", response);
@@ -53,6 +55,8 @@ export function TicketList({ searchQuery, statusFilter }: TicketListProps) {
                 setTickets(ticketsWithDates);
             } catch (error) {
                 console.error("Failed to fetch tickets:", error);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -71,6 +75,20 @@ export function TicketList({ searchQuery, statusFilter }: TicketListProps) {
         setSelectedTicket(ticket);
         setIsViewModalOpen(true);
     };
+
+    if (loading) {
+        return (
+            <div className="flex-1 bg-gray-50 p-6 overflow-auto">
+                <div className="bg-white rounded-lg shadow-sm p-16 text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mb-4"></div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Loading requests...
+                    </h3>
+                    <p className="text-gray-500">Please wait while we fetch your data</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1 bg-gray-50 p-6 overflow-auto">
