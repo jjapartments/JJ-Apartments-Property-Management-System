@@ -43,10 +43,10 @@ public class TenantRepository {
 
     // Method to update unit occupant count based on actual tenant count
     private void updateUnitOccupantCount(int unitId) {
-        String countSql = "SELECT COUNT(*) FROM tenants WHERE units_id = ?";
+        String countSql = "SELECT COUNT(*) FROM tenants WHERE units_id = ? AND move_out_date IS NULL";
         Integer tenantCount = jdbcTemplate.queryForObject(countSql, Integer.class, unitId);
 
-        String updateSql = "UPDATE units SET num_occupants = ? WHERE id = ?";
+        String updateSql = "UPDATE units SET curr_occupants = ? WHERE id = ?";
         jdbcTemplate.update(updateSql, tenantCount != null ? tenantCount : 0, unitId);
     }
 
