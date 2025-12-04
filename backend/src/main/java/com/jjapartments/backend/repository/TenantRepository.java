@@ -41,15 +41,6 @@ public class TenantRepository {
         return jdbcTemplate.query(sql, new TenantRowMapper(), unitId);
     }
 
-    // Method to update unit occupant count based on actual tenant count
-    private void updateUnitOccupantCount(int unitId) {
-        String countSql = "SELECT COUNT(*) FROM tenants WHERE units_id = ? AND move_out_date IS NULL";
-        Integer tenantCount = jdbcTemplate.queryForObject(countSql, Integer.class, unitId);
-
-        String updateSql = "UPDATE units SET curr_occupants = ? WHERE id = ?";
-        jdbcTemplate.update(updateSql, tenantCount != null ? tenantCount : 0, unitId);
-    }
-
     // check if unit ID exists in database
     public boolean unitExists(int unitId) {
         String sql = "SELECT COUNT(*) FROM units WHERE id = ?";
@@ -163,8 +154,6 @@ public class TenantRepository {
         }
 
         setActiveTenantonUnit(tenant.getUnitId(), createdTenant.getId());
-        updateUnitOccupantCount(tenant.getUnitId());
-
         return createdTenant;
     }
 
@@ -177,11 +166,8 @@ public class TenantRepository {
         String sql = "DELETE FROM tenants WHERE id = ?";
         int result = jdbcTemplate.update(sql, id);
 
-        // Update unit occupant count after deleting tenant
+        // if this was an active tenant, clear active_tenant_id
         if (result > 0) {
-            updateUnitOccupantCount(unitId);
-
-            // if this was an active tenant, clear active_tenant_id
             String checkActiveSql = "SELECT active_tenant_id FROM units WHERE id = ?";
             Integer activeTenantId = jdbcTemplate.queryForObject(checkActiveSql, Integer.class, unitId);
             if (activeTenantId != null && activeTenantId == id) {
@@ -242,19 +228,11 @@ public class TenantRepository {
                 tenant.getEmail(), tenant.getPhoneNumber(), tenant.getMessengerLink(), tenant.getUnitId(),
                 tenant.getMoveInDate(), id);
 
-        // Update occupant counts for both old and new units if tenant moved
+        // Update active_tenant_id for both old and new units if tenant moved
         if (result > 0) {
             if (oldUnitId != newUnitId) {
-                // Clear active_tenant_id from old unit
                 setActiveTenantonUnit(oldUnitId, null);
-                // Set active_tenant_id on new unit
                 setActiveTenantonUnit(newUnitId, id);
-                // Update both old and new unit occupant counts
-                updateUnitOccupantCount(oldUnitId);
-                updateUnitOccupantCount(newUnitId);
-            } else {
-                // Update current unit occupant count
-                updateUnitOccupantCount(newUnitId);
             }
         }
 
@@ -291,8 +269,6 @@ public class TenantRepository {
 
         String updateUnitSql = "UPDATE units SET active_tenant_id = NULL WHERE id = ?";
         jdbcTemplate.update(updateUnitSql, tenant.getUnitId());
-
-        updateUnitOccupantCount(tenant.getUnitId());
 
         return findById(id);
     }
