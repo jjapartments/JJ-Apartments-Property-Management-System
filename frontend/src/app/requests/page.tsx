@@ -208,9 +208,19 @@ export default function RequestsPage() {
             {/* Form Container */}
             <div className="relative z-10 flex items-center justify-center min-h-screen pt-10 pb-10 px-5">
                 <form
-                    className="w-full max-w-4xl rounded-2xl bg-white p-10 shadow-2xl"
+                    className="w-full max-w-4xl rounded-2xl bg-white p-10 shadow-2xl relative"
                     onSubmit={handleSubmit}
                 >
+                    {/* Loading Overlay */}
+                    {submitting && (
+                        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-2xl flex items-center justify-center z-50">
+                            <div className="text-center">
+                                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mb-4"></div>
+                                <p className="text-gray-700 font-medium">Submitting your request...</p>
+                            </div>
+                        </div>
+                    )}
+
                     <h1 className="text-2xl font-bold mb-6">Request Form</h1>
 
                     <hr className="border-gray-300 mb-6 mt-6" />

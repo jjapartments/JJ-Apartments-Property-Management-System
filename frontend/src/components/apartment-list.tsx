@@ -157,6 +157,7 @@ export function ApartmentList() {
 
   useEffect(() => {
     const fetchUnits = async () => {
+      setLoading(true);
       try {
         const unitData = await api.get<Unit[]>("/api/units");
         setUnits(unitData);
@@ -207,6 +208,8 @@ export function ApartmentList() {
             ? error.message
             : "Error fetching units";
         setError(displayMessage);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -474,7 +477,19 @@ export function ApartmentList() {
     );
   };
 
-  if (loading) return <p>Loading payments...</p>;
+  if (loading) {
+    return (
+      <div className="flex-1 bg-gray-50 p-6 overflow-auto">
+        <div className="bg-white rounded-lg shadow-sm p-16 text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mb-4"></div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Loading apartments...
+          </h3>
+          <p className="text-gray-500">Please wait while we fetch your data</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 bg-gray-50 p-6 overflow-auto">
