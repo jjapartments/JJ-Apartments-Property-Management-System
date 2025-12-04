@@ -64,10 +64,36 @@ export function TicketList({ searchQuery, statusFilter }: TicketListProps) {
     }, []);
 
     const filteredTickets = tickets.filter((t) => {
+        if (!searchQuery) {
+            const matchesStatus =
+                statusFilter === "all" || t.status === statusFilter;
+            return matchesStatus;
+        }
+
+        const query = searchQuery.toLowerCase().trim();
+        
+        // Handle REQ- prefixed searches (e.g., "REQ-000123" or "req-123")
+        let idMatch = false;
+        if (query.startsWith("req-") || query.startsWith("req")) {
+            const numericPart = query.replace(/^req-?/i, "");
+            idMatch = t.id.toString() === numericPart || 
+                      t.id.toString().padStart(6, "0") === numericPart;
+        } else {
+            // Direct numeric search - handles both "123" and "000123"
+            const paddedId = t.id.toString().padStart(6, "0");
+            idMatch = t.id.toString().includes(query) || paddedId.includes(query);
+        }
+
         const matchesSearch =
-            t.id.toString().includes(searchQuery) || !searchQuery;
+            idMatch ||
+            t.subject.toLowerCase().includes(query) ||
+            t.unitNumber.toLowerCase().includes(query) ||
+            t.apartmentName.toLowerCase().includes(query) ||
+            t.name.toLowerCase().includes(query);
+
         const matchesStatus =
             statusFilter === "all" || t.status === statusFilter;
+        
         return matchesSearch && matchesStatus;
     });
 
