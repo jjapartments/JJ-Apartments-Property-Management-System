@@ -67,8 +67,14 @@ public class UnitRepository {
             throw new ErrorException("The unit already exists.");
         } else {
             String sql = "INSERT INTO units(unit_number, name, description, price, num_occupants,active_tenant_id) VALUES (?, ?, ?, ?, ?, ?)";
-            jdbcTemplate.update(sql, unit.getUnitNumber(), unit.getName(), unit.getDescription(), unit.getPrice(),
-                    unit.getNumOccupants());
+            jdbcTemplate.update(
+                    sql,
+                    unit.getUnitNumber(),
+                    unit.getName(),
+                    unit.getDescription(),
+                    unit.getPrice(),
+                    unit.getNumOccupants(),
+                    unit.getActiveTenantId() > 0 ? unit.getActiveTenantId() : null);
 
             String fetchSql = """
                         SELECT
@@ -106,8 +112,7 @@ public class UnitRepository {
                     unit.getName(),
                     unit.getDescription(),
                     unit.getPrice(),
-                    unit.getNumOccupants(),
-                    unit.getActiveTenantId() > 0 ? unit.getActiveTenantId() : null);
+                    unit.getNumOccupants());
         }
     }
 
