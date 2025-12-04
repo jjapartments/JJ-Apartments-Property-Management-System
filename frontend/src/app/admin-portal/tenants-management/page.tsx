@@ -59,6 +59,7 @@ type TenantWithUnitDetails = Omit<Tenant, "unit"> & {
 };
 
 export default function TenantsManagementPage() {
+    const [isLoading, setIsLoading] = useState(true);
     const { refreshTrigger, triggerRefresh } = useDataRefresh();
     const [modalOpen, setModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] =
@@ -136,6 +137,7 @@ export default function TenantsManagementPage() {
         }
     };
     const fetchTenants = async () => {
+        setIsLoading(true);
         try {
             const [units, tenants] = await Promise.all([
                 api.get("/api/units"),
@@ -189,6 +191,8 @@ export default function TenantsManagementPage() {
             setMovedOutTenants(movedOut);
         } catch (err) {
             console.error("Error fetching data", err);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -358,6 +362,7 @@ export default function TenantsManagementPage() {
     }, [units, fullTenantData, selectedTenant]);
 
     const fetchUnitsAndTenants = async () => {
+        setIsLoading(true);
         try {
             // Fetch all data concurrently with JWT token automatically added
             const [unitData, tenantData, subtenants] = await Promise.all([
@@ -430,6 +435,8 @@ export default function TenantsManagementPage() {
 
             console.error("fetchUnitsAndTenants error:", err);
             setErrorMessage(displayMessage);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -689,7 +696,16 @@ export default function TenantsManagementPage() {
 
             <div className="px-6 py-6">
                 <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-                    {tenantFilter === "active" ? (
+                    {isLoading ? (
+                        /* Loading State */
+                        <div className="p-16 text-center">
+                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mb-4"></div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                Loading tenants...
+                            </h3>
+                            <p className="text-gray-500">Please wait while we fetch your data</p>
+                        </div>
+                    ) : tenantFilter === "active" ? (
                         activeTenants.length === 0 ? (
                             /* Empty State — Active */
                             <div className="p-16 text-center bg-gradient-to-b from-gray-50 to-white">
