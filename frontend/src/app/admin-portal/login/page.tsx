@@ -45,7 +45,7 @@ export default function LoginPage() {
   // Show loading while auth is being checked
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" data-cy="auth-loading">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
@@ -150,10 +150,10 @@ export default function LoginPage() {
             <p className="text-gray-600">Access your property management dashboard</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" data-cy="login-form">
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+              <Alert variant="destructive" data-cy="error-alert">
+                <AlertDescription data-cy="error-message">{error}</AlertDescription>
               </Alert>
             )}
             
@@ -165,6 +165,7 @@ export default function LoginPage() {
                 id="username"
                 name="username"
                 type="text"
+                data-cy="username-input"
                 placeholder="Enter your username"
                 value={formData.username}
                 disabled={isLoading}
@@ -183,6 +184,7 @@ export default function LoginPage() {
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
+                  data-cy="password-input"
                   placeholder="Enter your password"
                   value={formData.password}
                   disabled={isLoading}
@@ -194,6 +196,7 @@ export default function LoginPage() {
                   type="button"
                   variant="ghost"
                   size="sm"
+                  data-cy="toggle-password"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
@@ -211,13 +214,14 @@ export default function LoginPage() {
             </div>
 
             <Button 
-              type="submit" 
+              type="submit"
+              data-cy="submit-button"
               className="w-full h-12 bg-black hover:bg-black text-yellow-300 font-medium text-base"
               disabled={isLoading}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" data-cy="loading-spinner" />
                   Logging in...
                 </>
               ) : (
@@ -229,7 +233,11 @@ export default function LoginPage() {
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
               Don&apos;t have an account?{' '}
-              <a href="/admin-portal/signup" className="text-yellow-500 hover:text-yellow-600">
+              <a 
+                href="/admin-portal/signup"
+                data-cy="signup-link"
+                className="text-yellow-500 hover:text-yellow-600"
+              >
                 Sign up here
               </a>
             </p>
