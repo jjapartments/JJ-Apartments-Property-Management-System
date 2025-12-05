@@ -206,14 +206,18 @@ export default function UtilitiesList() {
 
             <div>
               <Button variant="ghost" onClick={() => setOpenRates(true)}>
-                <span className="font-medium text-xs uppercase text-gray-700">
-                  Rate:{" "}
-                  {type === "Meralco"
-                    ? rates[0].rate
-                    : type === "Manila Water"
-                    ? rates[1].rate
-                    : "N/A"}
-                </span>
+                {rates.length > 0 && (
+                  <Button variant="ghost" onClick={() => setOpenRates(true)}>
+                    <span className="font-medium text-xs uppercase text-gray-700">
+                      Rate:{" "}
+                      {type === "Meralco"
+                        ? (rates[0]?.rate ?? "N/A")
+                        : type === "Manila Water"
+                        ? (rates[1]?.rate ?? "N/A")
+                        : "N/A"}
+                    </span>
+                  </Button>
+                )}
               </Button>
             </div>
           </div>
