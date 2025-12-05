@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/date-picker";
 import { Utility } from "./utilities-list";
 import { api, ApiError } from "@/lib/api";
+
 interface Props {
   type: "Meralco" | "Manila Water";
   setUtilities: React.Dispatch<React.SetStateAction<Utility[]>>;
@@ -34,6 +35,7 @@ export default function AddUtilityButton({ type, setUtilities }: Props) {
   const [monthOfEnd, setMonthOfEnd] = useState<Date | undefined>(undefined);
   const [units, setUnits] = useState<Unit[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const resetForm = () => {
     setUnitId(0);
@@ -45,6 +47,7 @@ export default function AddUtilityButton({ type, setUtilities }: Props) {
   };
 
   const handleClose = () => {
+    if (loading) return;
     setIsOpen(false);
     resetForm();
   };
@@ -109,6 +112,7 @@ export default function AddUtilityButton({ type, setUtilities }: Props) {
     };
 
     try {
+      setLoading(true);
       const savedUtility = await api.post("/api/utilities/add", body);
       setUtilities((prev) => [savedUtility, ...prev]);
       handleClose();
@@ -122,9 +126,10 @@ export default function AddUtilityButton({ type, setUtilities }: Props) {
 
       console.error("handleSubmit utility error:", error);
       setError(displayMessage);
+    } finally {
+      setLoading(false);
     }
   };
-
 
   return (
     <>
@@ -137,64 +142,78 @@ export default function AddUtilityButton({ type, setUtilities }: Props) {
               <CardTitle>Add {type} Record</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="py-1 text-sm text-gray-900">
-                Unit <span className="text-red-500">*</span>
-                <Select onValueChange={(value) => setUnitId(Number(value))}>
-                  <SelectTrigger className="w-full h-11 rounded-md border px-3 text-left">
-                    <SelectValue placeholder="Select Unit" />
-                  </SelectTrigger>
-                  <SelectContent className="w-full">
-                    {units.map((u) => (
-                      <SelectItem key={u.id} value={String(u.id)}>
-                        Unit {u.unitNumber} - {u.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="py-1 text-sm text-gray-900">
-                Current Reading <span className="text-red-500">*</span>
-                <Input
-                  type="number"
-                  placeholder="Current Reading"
-                  value={currentReading}
-                  onChange={(e) => setCurrentReading(e.target.value)}
-                />
-              </div>
-
-              <div className="py-1 text-sm text-gray-900">
-                Due Date <span className="text-red-500">*</span>
-                <DatePicker date={dueDate} setDate={setDueDate} />
-              </div>
-
-              <div className="grid gap-4 py-1">
-                <div className="grid grid-cols-2 gap-4">
+              {loading ? (
+                <div className="py-16 text-center">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mb-4"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Adding utility...
+                  </h3>
+                  <p className="text-gray-500">Please wait</p>
+                </div>
+              ) : (
+                <>
                   <div className="py-1 text-sm text-gray-900">
-                    Month Of Start <span className="text-red-500">*</span>
-                    <DatePicker date={monthOfStart} setDate={setMonthOfStart} />
+                    Unit <span className="text-red-500">*</span>
+                    <Select onValueChange={(value) => setUnitId(Number(value))}>
+                      <SelectTrigger className="w-full h-11 rounded-md border px-3 text-left">
+                        <SelectValue placeholder="Select Unit" />
+                      </SelectTrigger>
+                      <SelectContent className="w-full">
+                        {units.map((u) => (
+                          <SelectItem key={u.id} value={String(u.id)}>
+                            Unit {u.unitNumber} - {u.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="py-1 text-sm text-gray-900">
-                    Month Of End <span className="text-red-500">*</span>
-                    <DatePicker date={monthOfEnd} setDate={setMonthOfEnd} />
+                    Current Reading <span className="text-red-500">*</span>
+                    <Input
+                      type="number"
+                      placeholder="Current Reading"
+                      value={currentReading}
+                      onChange={(e) => setCurrentReading(e.target.value)}
+                    />
                   </div>
-                </div>
-              </div>
 
-              {error && (
-                <div className="mt-2 text-sm text-red-600 bg-red-100 p-2 rounded">
-                  {error}
-                </div>
+                  <div className="py-1 text-sm text-gray-900">
+                    Due Date <span className="text-red-500">*</span>
+                    <DatePicker date={dueDate} setDate={setDueDate} />
+                  </div>
+
+                  <div className="grid gap-4 py-1">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="py-1 text-sm text-gray-900">
+                        Month Of Start <span className="text-red-500">*</span>
+                        <DatePicker date={monthOfStart} setDate={setMonthOfStart} />
+                      </div>
+
+                      <div className="py-1 text-sm text-gray-900">
+                        Month Of End <span className="text-red-500">*</span>
+                        <DatePicker date={monthOfEnd} setDate={setMonthOfEnd} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="mt-2 text-sm text-red-600 bg-red-100 p-2 rounded">
+                      {error}
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
 
             <CardFooter className="flex justify-between">
               <div className="flex gap-4">
-                <Button variant="secondary" onClick={handleClose}>
+                <Button variant="secondary" onClick={handleClose} disabled={loading}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit}>Submit</Button>
+                <Button onClick={handleSubmit} disabled={loading}>
+                  {loading ? "Submitting..." : "Submit"}
+                </Button>
               </div>
             </CardFooter>
           </Card>
