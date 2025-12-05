@@ -45,6 +45,7 @@ export function AddTenantModal({
 }: AddTenantProps) {
     const [isDirty, setIsDirty] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [loading, setLoading] = useState(false);
     const { triggerRefresh } = useDataRefresh();
 
     const [formData, setFormData] = useState({
@@ -75,6 +76,7 @@ export function AddTenantModal({
             });
             setErrors({});
             setIsDirty(false);
+            setLoading(false);
         }
     }, [open]);
 
@@ -116,20 +118,29 @@ export function AddTenantModal({
         if (Object.keys(newErrors).length > 0) return;
 
         if (onSubmit) {
-            // Transform date to ISO format
-            const isoMoveInDate = new Date(formData.moveInDate)
-                .toISOString()
-                .split("T")[0];
-            formData.moveInDate = isoMoveInDate;
+            try {
+                setLoading(true);
+                // Transform date to ISO format
+                const isoMoveInDate = new Date(formData.moveInDate)
+                    .toISOString()
+                    .split("T")[0];
+                formData.moveInDate = isoMoveInDate;
 
-            await onSubmit(formData);
-            onClose();
+                await onSubmit(formData);
+                onClose();
+            } catch (error) {
+                console.error("Error adding tenant:", error);
+                // Error handling is assumed to be done in the parent component
+            } finally {
+                setLoading(false);
+            }
 
             return;
         }
     };
 
     const handleCancel = () => {
+        if (loading) return; // Prevent closing while loading
         setErrors({});
         setIsDirty(false);
         onClose();
@@ -137,7 +148,7 @@ export function AddTenantModal({
 
     return (
         <>
-            <Dialog open={open} onOpenChange={onClose}>
+            <Dialog open={open} onOpenChange={loading ? undefined : onClose}>
                 <DialogContent className="max-w-4xl sm:max-w-3xl w-full">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-semibold">
@@ -150,120 +161,132 @@ export function AddTenantModal({
 
                     <hr className="border-t border-gray-200" />
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <InputField
-                            isEditing={true}
-                            label="First Name"
-                            value={formData.firstName || ""}
-                            placeholder="e.g., Juan"
-                            required
-                            onChange={(e) =>
-                                handleChange("firstName", e.target.value)
-                            }
-                        />
-                        <InputField
-                            isEditing={true}
-                            label="Middle Initial"
-                            value={formData.middleInitial || ""}
-                            placeholder="e.g., S"
-                            onChange={(e) =>
-                                handleChange("middleInitial", e.target.value)
-                            }
-                        />
-                        <InputField
-                            isEditing={true}
-                            label="Last Name"
-                            value={formData.lastName || ""}
-                            placeholder="e.g., De La Cruz"
-                            required
-                            onChange={(e) =>
-                                handleChange("lastName", e.target.value)
-                            }
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <InputField
-                            isEditing={true}
-                            label="Email"
-                            type="email"
-                            value={formData.email || ""}
-                            placeholder="e.g., juan.delacruz@email.com"
-                            required
-                            onChange={(e) =>
-                                handleChange("email", e.target.value)
-                            }
-                        />
-                        <InputField
-                            isEditing={true}
-                            label="Cellphone Number"
-                            type="tel"
-                            value={formData.phoneNumber || ""}
-                            placeholder="e.g., 09123456789"
-                            required
-                            onChange={(e) =>
-                                handleChange("phoneNumber", e.target.value)
-                            }
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-1 gap-2">
-                        <InputField
-                            isEditing={true}
-                            label="Messenger / Facebook Link"
-                            type="url"
-                            value={formData.messengerLink}
-                            placeholder="e.g., https://facebook.com/juan.delacruz"
-                            onChange={(e) =>
-                                handleChange("messengerLink", e.target.value)
-                            }
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
-                        <div className="mb-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Unit <span className="text-red-500">*</span>
-                            </label>
-                            <Select
-                                value={formData.unitId}
-                                onValueChange={(value) =>
-                                    setFormData({ ...formData, unitId: value })
-                                }
-                            >
-                                <SelectTrigger className="w-full min-h-12 rounded-md border-gray-400 border px-4 py-3 text-left">
-                                    <SelectValue placeholder="Select Unit" />
-                                </SelectTrigger>
-                                <SelectContent className="w-full">
-                                    {units.length === 0 ? (
-                                        <div className="px-4 py-3 text-sm text-gray-500">
-                                            No available units
-                                        </div>
-                                    ) : (
-                                        units.map((u) => (
-                                            <SelectItem
-                                                key={u.id}
-                                                value={String(u.id)}
-                                            >
-                                                Unit {u.unitNumber} - {u.name}
-                                            </SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
+                    {loading ? (
+                        <div className="py-16 text-center">
+                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mb-4"></div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                Adding tenant...
+                            </h3>
+                            <p className="text-gray-500">Please wait</p>
                         </div>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                <InputField
+                                    isEditing={true}
+                                    label="First Name"
+                                    value={formData.firstName || ""}
+                                    placeholder="e.g., Juan"
+                                    required
+                                    onChange={(e) =>
+                                        handleChange("firstName", e.target.value)
+                                    }
+                                />
+                                <InputField
+                                    isEditing={true}
+                                    label="Middle Initial"
+                                    value={formData.middleInitial || ""}
+                                    placeholder="e.g., S"
+                                    onChange={(e) =>
+                                        handleChange("middleInitial", e.target.value)
+                                    }
+                                />
+                                <InputField
+                                    isEditing={true}
+                                    label="Last Name"
+                                    value={formData.lastName || ""}
+                                    placeholder="e.g., De La Cruz"
+                                    required
+                                    onChange={(e) =>
+                                        handleChange("lastName", e.target.value)
+                                    }
+                                />
+                            </div>
 
-                        <InputField
-                            isEditing={true}
-                            label="Move-in Date"
-                            type="date"
-                            value={formData.moveInDate}
-                            onChange={(e) =>
-                                handleChange("moveInDate", e.target.value)
-                            }
-                            required={true}
-                        />
-                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <InputField
+                                    isEditing={true}
+                                    label="Email"
+                                    type="email"
+                                    value={formData.email || ""}
+                                    placeholder="e.g., juan.delacruz@email.com"
+                                    required
+                                    onChange={(e) =>
+                                        handleChange("email", e.target.value)
+                                    }
+                                />
+                                <InputField
+                                    isEditing={true}
+                                    label="Cellphone Number"
+                                    type="tel"
+                                    value={formData.phoneNumber || ""}
+                                    placeholder="e.g., 09123456789"
+                                    required
+                                    onChange={(e) =>
+                                        handleChange("phoneNumber", e.target.value)
+                                    }
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-1 gap-2">
+                                <InputField
+                                    isEditing={true}
+                                    label="Messenger / Facebook Link"
+                                    type="url"
+                                    value={formData.messengerLink}
+                                    placeholder="e.g., https://facebook.com/juan.delacruz"
+                                    onChange={(e) =>
+                                        handleChange("messengerLink", e.target.value)
+                                    }
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
+                                <div className="mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Unit <span className="text-red-500">*</span>
+                                    </label>
+                                    <Select
+                                        value={formData.unitId}
+                                        onValueChange={(value) =>
+                                            setFormData({ ...formData, unitId: value })
+                                        }
+                                    >
+                                        <SelectTrigger className="w-full min-h-12 rounded-md border-gray-400 border px-4 py-3 text-left">
+                                            <SelectValue placeholder="Select Unit" />
+                                        </SelectTrigger>
+                                        <SelectContent className="w-full">
+                                            {units.length === 0 ? (
+                                                <div className="px-4 py-3 text-sm text-gray-500">
+                                                    No available units
+                                                </div>
+                                            ) : (
+                                                units.map((u) => (
+                                                    <SelectItem
+                                                        key={u.id}
+                                                        value={String(u.id)}
+                                                    >
+                                                        Unit {u.unitNumber} - {u.name}
+                                                    </SelectItem>
+                                                ))
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <InputField
+                                    isEditing={true}
+                                    label="Move-in Date"
+                                    type="date"
+                                    value={formData.moveInDate}
+                                    onChange={(e) =>
+                                        handleChange("moveInDate", e.target.value)
+                                    }
+                                    required={true}
+                                />
+                            </div>
+                        </>
+                    )}
 
                     <hr className="border-t border-gray-200" />
 
@@ -275,7 +298,7 @@ export function AddTenantModal({
                                         ? "Please fill in the required fields."
                                         : Object.values(errors)[0]}
                                 </p>
-                            ) : isDirty ? (
+                            ) : isDirty && !loading ? (
                                 <p className="text-sm text-gray-500 italic">
                                     You have unsaved changes.
                                 </p>
@@ -286,11 +309,16 @@ export function AddTenantModal({
                             <Button
                                 className="min-w-[100px]"
                                 onClick={handleCancel}
+                                disabled={loading}
                             >
                                 Cancel
                             </Button>
-                            <Button variant="secondary" onClick={handleSubmit}>
-                                Submit
+                            <Button 
+                                variant="secondary" 
+                                onClick={handleSubmit}
+                                disabled={loading}
+                            >
+                                {loading ? "Submitting..." : "Submit"}
                             </Button>
                         </div>
                     </DialogFooter>

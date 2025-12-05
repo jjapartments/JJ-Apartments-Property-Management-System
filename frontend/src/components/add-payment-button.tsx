@@ -33,6 +33,7 @@ export default function AddPaymentButton({ setPayment }: Props) {
   const [monthOfStart, setMonthOfStart] = useState<Date | undefined>(undefined);
   const [monthOfEnd, setMonthOfEnd] = useState<Date | undefined>(undefined);
   const [units, setUnits] = useState<Unit[]>([]);
+  const [loading, setLoading] = useState(false);
   const modeOptions = [
     "Cash",
     "GCash",
@@ -53,6 +54,7 @@ export default function AddPaymentButton({ setPayment }: Props) {
   };
 
   const handleClose = () => {
+    if (loading) return;
     setIsOpen(false);
     resetForm();
   };
@@ -99,6 +101,7 @@ export default function AddPaymentButton({ setPayment }: Props) {
     };
 
     try {
+      setLoading(true);
       const saved = await api.post("/api/payments/add", body);
       setPayment((prev) => [saved, ...prev]);
       handleClose();
@@ -111,6 +114,8 @@ export default function AddPaymentButton({ setPayment }: Props) {
           : "Error submitting payment";
       console.error("handleSubmit error:", error);
       setError(displayMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -125,79 +130,93 @@ export default function AddPaymentButton({ setPayment }: Props) {
               <CardTitle>Add Payment Record</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="py-1 text-sm text-gray-900">
-                Unit <span className="text-red-500">*</span>
-                <Select onValueChange={(value) => setUnitId(Number(value))}>
-                  <SelectTrigger className="w-full h-11 rounded-md border px-3 text-left">
-                    <SelectValue placeholder="Select Unit" />
-                  </SelectTrigger>
-                  <SelectContent className="w-full">
-                    {units.map((u) => (
-                      <SelectItem key={u.id} value={String(u.id)}>
-                        Unit {u.unitNumber} - {u.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="py-1 text-sm text-gray-900">
-                Mode Of Payment <span className="text-red-500">*</span>
-                <Select onValueChange={(value) => setModeOfPayment(value)}>
-                  <SelectTrigger className="w-full h-11 rounded-md border px-3 text-left">
-                    <SelectValue placeholder="Select Mode of Payment" />
-                  </SelectTrigger>
-                  <SelectContent className="w-full">
-                    {modeOptions.map((mode) => (
-                      <SelectItem key={mode} value={mode}>
-                        {mode}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="py-1 text-sm text-gray-900">
-                Amount <span className="text-red-500">*</span>
-                <Input
-                  type="number"
-                  placeholder="Amount"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-              </div>
-
-              <div className="py-1 text-sm text-gray-900">
-                Due Date <span className="text-red-500">*</span>
-                <DatePicker date={dueDate} setDate={setDueDate} />
-              </div>
-
-              <div className="grid gap-4 py-1">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="py-1 text-sm text-gray-900">
-                    Month Of Start <span className="text-red-500">*</span>
-                    <DatePicker date={monthOfStart} setDate={setMonthOfStart} />
-                  </div>
-                  <div className="py-1 text-sm text-gray-900">
-                    Month Of End <span className="text-red-500">*</span>
-                    <DatePicker date={monthOfEnd} setDate={setMonthOfEnd} />
-                  </div>
+              {loading ? (
+                <div className="py-16 text-center">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mb-4"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Adding payment...
+                  </h3>
+                  <p className="text-gray-500">Please wait</p>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="py-1 text-sm text-gray-900">
+                    Unit <span className="text-red-500">*</span>
+                    <Select onValueChange={(value) => setUnitId(Number(value))}>
+                      <SelectTrigger className="w-full h-11 rounded-md border px-3 text-left">
+                        <SelectValue placeholder="Select Unit" />
+                      </SelectTrigger>
+                      <SelectContent className="w-full">
+                        {units.map((u) => (
+                          <SelectItem key={u.id} value={String(u.id)}>
+                            Unit {u.unitNumber} - {u.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              {error && (
-                <div className="mt-2 text-sm text-red-600 bg-red-100 p-2 rounded">
-                  {error}
-                </div>
+                  <div className="py-1 text-sm text-gray-900">
+                    Mode Of Payment <span className="text-red-500">*</span>
+                    <Select onValueChange={(value) => setModeOfPayment(value)}>
+                      <SelectTrigger className="w-full h-11 rounded-md border px-3 text-left">
+                        <SelectValue placeholder="Select Mode of Payment" />
+                      </SelectTrigger>
+                      <SelectContent className="w-full">
+                        {modeOptions.map((mode) => (
+                          <SelectItem key={mode} value={mode}>
+                            {mode}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="py-1 text-sm text-gray-900">
+                    Amount <span className="text-red-500">*</span>
+                    <Input
+                      type="number"
+                      placeholder="Amount"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="py-1 text-sm text-gray-900">
+                    Due Date <span className="text-red-500">*</span>
+                    <DatePicker date={dueDate} setDate={setDueDate} />
+                  </div>
+
+                  <div className="grid gap-4 py-1">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="py-1 text-sm text-gray-900">
+                        Month Of Start <span className="text-red-500">*</span>
+                        <DatePicker date={monthOfStart} setDate={setMonthOfStart} />
+                      </div>
+                      <div className="py-1 text-sm text-gray-900">
+                        Month Of End <span className="text-red-500">*</span>
+                        <DatePicker date={monthOfEnd} setDate={setMonthOfEnd} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="mt-2 text-sm text-red-600 bg-red-100 p-2 rounded">
+                      {error}
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
 
             <CardFooter className="flex justify-between">
               <div className="flex gap-4">
-                <Button variant="secondary" onClick={handleClose}>
+                <Button variant="secondary" onClick={handleClose} disabled={loading}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit}>Submit</Button>
+                <Button onClick={handleSubmit} disabled={loading}>
+                  {loading ? "Submitting..." : "Submit"}
+                </Button>
               </div>
             </CardFooter>
           </Card>

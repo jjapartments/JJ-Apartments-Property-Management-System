@@ -21,6 +21,7 @@ export default function AddUnitButton() {
   const [price, setPrice] = useState<string>("");
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -62,6 +63,7 @@ export default function AddUnitButton() {
     };
 
     try {
+      setLoading(true);
       await api.post("/api/units/add", body);
 
       // Reset form fields on success
@@ -84,6 +86,8 @@ export default function AddUnitButton() {
       console.error("Error submitting unit:", error);
       setErrorMessage(displayMessage);
       setErrorModalOpen(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,6 +105,7 @@ export default function AddUnitButton() {
   };
 
   const handleModalClose = () => {
+    if (loading) return; // Prevent closing while loading
     setIsOpen(false);
     resetForm();
   };
@@ -116,75 +121,91 @@ export default function AddUnitButton() {
               <CardTitle>Add Unit Record</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 py-2">
-                <div>
-                  <Label className="py-1">
-                    Apartment Name <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    type="text"
-                    placeholder="Tanglewood Drive"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
+              {loading ? (
+                <div className="py-16 text-center">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mb-4"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Adding unit...
+                  </h3>
+                  <p className="text-gray-500">Please wait</p>
                 </div>
-                <div>
-                  <Label className="py-1">
-                    Unit Number <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    type="text"
-                    placeholder="G"
-                    value={unitNumber}
-                    onChange={(e) => setUnitNumber(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label className="py-1">
-                    Description <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    type="text"
-                    placeholder="Studio Apartment"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </div>
+              ) : (
+                <div className="grid gap-4 py-2">
+                  <div>
+                    <Label className="py-1">
+                      Apartment Name <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="Tanglewood Drive"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="py-1">
+                      Unit Number <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="G"
+                      value={unitNumber}
+                      onChange={(e) => setUnitNumber(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="py-1">
+                      Description <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="Studio Apartment"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
+                  </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="py-1">
-                      Max Number of Occupants{" "}
-                      <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      type="number"
-                      placeholder="2"
-                      value={numOccupants}
-                      onChange={(e) => setNumOccupants(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label className="py-1">
-                      Price <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      type="number"
-                      placeholder="15000"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="py-1">
+                        Max Number of Occupants{" "}
+                        <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        placeholder="2"
+                        value={numOccupants}
+                        onChange={(e) => setNumOccupants(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="py-1">
+                        Price <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        placeholder="15000"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </CardContent>
 
             <CardFooter className="flex justify-between">
               <div className="flex gap-4">
-                <Button variant="secondary" onClick={handleModalClose}>
+                <Button
+                  variant="secondary"
+                  onClick={handleModalClose}
+                  disabled={loading}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit}>Submit</Button>
+                <Button onClick={handleSubmit} disabled={loading}>
+                  {loading ? "Submitting..." : "Submit"}
+                </Button>
               </div>
             </CardFooter>
           </Card>

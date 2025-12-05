@@ -33,6 +33,7 @@ export default function AddExpenseButton({ setExpense }: Props) {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [units, setUnits] = useState<Unit[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const modeOptions = [
     "Cash",
     "GCash",
@@ -52,6 +53,7 @@ export default function AddExpenseButton({ setExpense }: Props) {
   };
 
   const handleClose = () => {
+    if (loading) return;
     setIsOpen(false);
     resetForm();
   };
@@ -112,6 +114,7 @@ export default function AddExpenseButton({ setExpense }: Props) {
     };
 
     try {
+      setLoading(true);
       const saved = await api.post("/api/expenses/add", body);
       setExpense((prev) => [saved, ...prev]);
       handleClose();
@@ -122,6 +125,8 @@ export default function AddExpenseButton({ setExpense }: Props) {
           : "Error submitting expense. Please try again.";
       console.error("handleSubmit error:", err);
       setError(displayMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -136,43 +141,26 @@ export default function AddExpenseButton({ setExpense }: Props) {
               <CardTitle>Add Expense Record</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="py-1 text-sm text-gray-900">
-                Unit <span className="text-red-500">*</span>
-                <Select onValueChange={(value) => setUnitId(Number(value))}>
-                  <SelectTrigger className="w-full h-11 rounded-md border px-3 text-left">
-                    <SelectValue placeholder="Select Unit" />
-                  </SelectTrigger>
-                  <SelectContent className="w-full">
-                    {units.map((u) => (
-                      <SelectItem key={u.id} value={String(u.id)}>
-                        Unit {u.unitNumber} - {u.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="py-1 text-sm text-gray-900">
-                Amount <span className="text-red-500">*</span>
-                <Input
-                  type="number"
-                  placeholder="Amount"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-4 py-1">
-                <div className="grid grid-cols-2 gap-4">
+              {loading ? (
+                <div className="py-16 text-center">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mb-4"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Adding expense...
+                  </h3>
+                  <p className="text-gray-500">Please wait</p>
+                </div>
+              ) : (
+                <>
                   <div className="py-1 text-sm text-gray-900">
-                    Mode Of Payment <span className="text-red-500">*</span>
-                    <Select onValueChange={(value) => setModeOfPayment(value)}>
+                    Unit <span className="text-red-500">*</span>
+                    <Select onValueChange={(value) => setUnitId(Number(value))}>
                       <SelectTrigger className="w-full h-11 rounded-md border px-3 text-left">
-                        <SelectValue placeholder="Select Mode of Payment" />
+                        <SelectValue placeholder="Select Unit" />
                       </SelectTrigger>
                       <SelectContent className="w-full">
-                        {modeOptions.map((mode) => (
-                          <SelectItem key={mode} value={mode}>
-                            {mode}
+                        {units.map((u) => (
+                          <SelectItem key={u.id} value={String(u.id)}>
+                            Unit {u.unitNumber} - {u.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -180,41 +168,72 @@ export default function AddExpenseButton({ setExpense }: Props) {
                   </div>
 
                   <div className="py-1 text-sm text-gray-900">
-                    Reason <span className="text-red-500">*</span>
-                    <Select onValueChange={(value) => setReason(value)}>
-                      <SelectTrigger className="w-full h-11 rounded-md border px-3 text-left">
-                        <SelectValue placeholder="Select Reason" />
-                      </SelectTrigger>
-                      <SelectContent className="w-full">
-                        {reasonOptions.map((reason) => (
-                          <SelectItem key={reason} value={reason}>
-                            {reason}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    Amount <span className="text-red-500">*</span>
+                    <Input
+                      type="number"
+                      placeholder="Amount"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
                   </div>
-                </div>
-              </div>
+                  <div className="grid gap-4 py-1">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="py-1 text-sm text-gray-900">
+                        Mode Of Payment <span className="text-red-500">*</span>
+                        <Select onValueChange={(value) => setModeOfPayment(value)}>
+                          <SelectTrigger className="w-full h-11 rounded-md border px-3 text-left">
+                            <SelectValue placeholder="Select Mode of Payment" />
+                          </SelectTrigger>
+                          <SelectContent className="w-full">
+                            {modeOptions.map((mode) => (
+                              <SelectItem key={mode} value={mode}>
+                                {mode}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-              <div className="py-1 text-sm text-gray-900">
-                Date <span className="text-red-500">*</span>
-                <DatePicker date={date} setDate={setDate} />
-              </div>
+                      <div className="py-1 text-sm text-gray-900">
+                        Reason <span className="text-red-500">*</span>
+                        <Select onValueChange={(value) => setReason(value)}>
+                          <SelectTrigger className="w-full h-11 rounded-md border px-3 text-left">
+                            <SelectValue placeholder="Select Reason" />
+                          </SelectTrigger>
+                          <SelectContent className="w-full">
+                            {reasonOptions.map((reason) => (
+                              <SelectItem key={reason} value={reason}>
+                                {reason}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
 
-              {error && (
-                <div className="mt-2 text-sm text-red-600 bg-red-100 p-2 rounded">
-                  {error}
-                </div>
+                  <div className="py-1 text-sm text-gray-900">
+                    Date <span className="text-red-500">*</span>
+                    <DatePicker date={date} setDate={setDate} />
+                  </div>
+
+                  {error && (
+                    <div className="mt-2 text-sm text-red-600 bg-red-100 p-2 rounded">
+                      {error}
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
 
             <CardFooter className="flex justify-between">
               <div className="flex gap-4">
-                <Button variant="secondary" onClick={handleClose}>
+                <Button variant="secondary" onClick={handleClose} disabled={loading}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit}>Submit</Button>
+                <Button onClick={handleSubmit} disabled={loading}>
+                  {loading ? "Submitting..." : "Submit"}
+                </Button>
               </div>
             </CardFooter>
           </Card>
