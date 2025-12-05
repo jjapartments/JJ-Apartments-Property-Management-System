@@ -1,14 +1,10 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { Loader2 } from 'lucide-react';
 
-export default function Home() {
-  const router = useRouter();
-  const { isLoggedIn, isLoading } = useAuth();
-
+export default function NotFound() {
   // Hide sidebar and topbar immediately
   useEffect(() => {
     document.body.style.marginLeft = '0';
@@ -28,20 +24,27 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (isLoggedIn) {
-        router.replace('/admin-portal/dashboard');
-      } else {
-        router.replace('/requests');
-      }
-    }
-  }, [isLoggedIn, isLoading, router]);
-
-  // Show loading while checking auth status
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 fixed inset-0 z-50">
-      <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+      <div className="text-center max-w-md px-4">
+        <div className="mb-8">
+          <h1 className="text-9xl font-bold text-gray-200">404</h1>
+          <h2 className="text-3xl font-semibold text-gray-900 mt-4 mb-2">
+            Page Not Found
+          </h2>
+          <p className="text-gray-600">
+            Sorry, we couldn&apos;t find the page you&apos;re looking for.
+          </p>
+        </div>
+
+        <Button 
+          onClick={() => window.history.back()} 
+          className="gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Go Back
+        </Button>
+      </div>
     </div>
   );
 }

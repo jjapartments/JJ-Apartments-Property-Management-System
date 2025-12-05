@@ -26,13 +26,21 @@ export default function RootLayout({
 }>) {
 
   const pathname = usePathname();
-  const authPages = ['/admin-portal/login', '/admin-portal/signup', '/admin-portal/forgot-password', '/admin-portal', '/requests'];
-  const isAuthPage = authPages.includes(pathname);
+  // Pages that should not show sidebar/topbar
+  const pagesWithoutLayout = [
+    '/admin-portal/login', 
+    '/admin-portal/signup', 
+    '/admin-portal/forgot-password', 
+    '/admin-portal', 
+    '/requests',
+    '/' // Add root page (loading screen)
+  ];
+  const isPageWithoutLayout = pagesWithoutLayout.includes(pathname);
 
-  if (isAuthPage) {
+  if (isPageWithoutLayout) {
     return (
       <html lang="en">
-        <body>
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           <DataProvider>
             {children}
           </DataProvider>
